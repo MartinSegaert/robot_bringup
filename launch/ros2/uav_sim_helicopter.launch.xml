@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+    <!-- <set_parameter name="use_sim_time" value="true"/> -->
+
+    <arg name="robot_name" default="helicopter"/>
+
+    <!-- point cloud to range image convertor (input to NMPC VAE) -->
+    <!-- <node pkg="rmf_gz" exec="pc_to_range.py" name="pc_to_range" args="0 0 0 0 0 0 1 /map /$(var robot_name)/odom" output="screen">
+        <remap from="~/img_out" to="/$(var robot_name)/lidar/range"/>
+        <remap from="~/pc_in"   to="/$(var robot_name)/lidar/points"/>
+    </node> -->
+
+    <!-- pointcloud downsampler (input to GBPlanner / ros1 bridge) -->
+    <node pkg="robot_bringup" exec="pc_sparsify_heli.py" name="pc_sparsify" output="screen">
+        <param name="input_topic"  value="/$(var robot_name)/lidar/points"/>
+        <param name="output_topic" value="/$(var robot_name)/lidar/points_downsampled"/>
+    </node>
+
+    <!-- lidar is 0.225 m above base_link (from helicopter SDF model).
+         Published here with wall-clock time so MAVROS/CBF TF lookups work.
+         use_sim_time is false (commented out above), so get_clock() = wall clock. -->
+    <node pkg="tf2_ros" exec="static_transform_publisher" name="tf_base_link_lidar"
+          args="--x 0 --y 0 --z 0.225 --roll 0 --pitch 0 --yaw 0
+                --frame-id helicopter/base_link --child-frame-id helicopter/base_link/lidar"/>
+
+</launch>

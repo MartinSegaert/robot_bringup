@@ -1,0 +1,83 @@
+topics:
+  # ros1 to ros2
+  - topic: /gbplanner_path
+    type: nav_msgs/msg/Path
+    queue_size: 10
+    direction: ros1_to_ros2
+
+  - service: /sdf_nmpc/takeoff
+    type: std_srvs/srv/Trigger
+    queue_size: 10
+    direction: ros1_to_ros2
+
+  - service: /sdf_nmpc/set_flag
+    type: std_srvs/srv/SetBool
+    queue_size: 10
+    direction: ros1_to_ros2
+
+
+    # ros2 to ros1
+  - topic: /helicopter/odom
+    type: nav_msgs/msg/Odometry
+    queue_size: 10
+    direction: ros2_to_ros1
+
+  - topic: /helicopter/lidar/points_downsampled
+    type: sensor_msgs/msg/PointCloud2
+    queue_size: 10
+    direction: ros2_to_ros1
+
+  - topic: /cbf_pc_selector/output_pc
+    type: sensor_msgs/msg/PointCloud2
+    queue_size: 10
+    direction: ros2_to_ros1
+
+  - topic: /tf
+    type: tf2_msgs/msg/TFMessage
+    queue_size: 10
+    direction: ros2_to_ros1
+
+  - topic: /tf_static
+    type: tf2_msgs/msg/TFMessage
+    queue_size: 10
+    direction: ros2_to_ros1
+
+  - topic: /clock
+    type: rosgraph_msgs/msg/Clock
+    queue_size: 10
+    direction: ros2_to_ros1
+
+  - topic: /mavros/setpoint_raw/local
+    type: mavros_msgs/msg/PositionTarget
+    queue_size: 10
+    direction: ros2_to_ros1
+
+  - topic: /sdf_nmpc/horizon_ref
+    type: trajectory_msgs/msg/MultiDOFJointTrajectory
+    queue_size: 10
+    direction: ros2_to_ros1
+
+  - topic: /rl_node/cmd_vel
+    type: geometry_msgs/msg/Twist
+    queue_size: 10
+    direction: ros2_to_ros1
+
+  - topic: /sdf_nmpc/viz/horizon_ref
+    type: nav_msgs/msg/Path
+    queue_size: 10
+    direction: ros2_to_ros1
+
+  - topic: /sdf_nmpc/viz/horizon_traj
+    type: nav_msgs/msg/Path
+    queue_size: 10
+    direction: ros2_to_ros1
+
+  - topic: /composite_cbf/input_viz
+    type: geometry_msgs/msg/TwistStamped
+    queue_size: 10
+    direction: ros2_to_ros1
+
+  - topic: /composite_cbf/output_viz
+    type: geometry_msgs/msg/TwistStamped
+    queue_size: 10
+    direction: ros2_to_ros1

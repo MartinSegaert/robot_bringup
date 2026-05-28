@@ -1,0 +1,18 @@
+manhole_bounding_box_size_min:  [0.0, 0.4, 0.55]
+manhole_bounding_box_size_max:  [0.15, 0.9, 1.3]
+canny_low_thres:                20
+slack:                          1
+col_offset:                     6
+row_offset:                     0
+cluster_radius:                 0.6
+buffer_size:                    20
+min_detection_to_be_permenant:  4
+max_normal_pitch:               0.6
+min_manhole_robot_distance:     0.3
+indices_to_crop:                [42, 44]
+num_laser_beams:                96
+crop_out_rows:                  false
+use_px_offsets:                 false
+flip_rows_columns:              true
+max_points_inside_mh:           2
+mh_centroid_bbox:               [2.0, 0.3, 0.3]

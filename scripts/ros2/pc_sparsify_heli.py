@@ -1,10 +1,31 @@
 #!/usr/bin/env python3
+"""Helicopter-specific point cloud downsampler.
+
+Extends pc_sparsify with TF-based timestamp correction needed for the
+ArduPilot SITL setup, where Gazebo sim-time and ROS wall-clock are
+different domains.  The published cloud is stamped with the timestamp
+of the latest map→<robot>/base_link TF (broadcast by GzPoseBridgeNode
+at wall-clock time) so that voxblox TF lookups always succeed.
+"""
+
+import time
 
 import rclpy
+import rclpy.duration
+import rclpy.time
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from sensor_msgs.msg import PointCloud2
+from rosgraph_msgs.msg import Clock
 import sensor_msgs_py.point_cloud2 as pc2
 import numpy as np
+import tf2_ros
+
+_CLOCK_QOS = QoSProfile(
+    reliability=ReliabilityPolicy.BEST_EFFORT,
+    history=HistoryPolicy.KEEP_LAST,
+    depth=10,
+)
 
 
 class PointCloudDownsampler(Node):
@@ -14,15 +35,21 @@ class PointCloudDownsampler(Node):
         # Parameters
         self.declare_parameter('input_topic', '/rmf/lidar/points')
         self.declare_parameter('output_topic', '/rmf/lidar/points_downsampled')
+        self.declare_parameter('output_frame_id', '')  # if set, overrides Gazebo's frame_id
         self.declare_parameter('voxel_size', 0.1)  # 5cm voxel grid
         self.declare_parameter('skip_points', 5)     # Keep every Nth point (alternative method)
         self.declare_parameter('method', 'skip')    # 'voxel' or 'skip'
+        self.declare_parameter('tf_parent_frame', 'map')
+        self.declare_parameter('tf_child_frame', 'helicopter/base_link')
 
         input_topic = self.get_parameter('input_topic').value
         output_topic = self.get_parameter('output_topic').value
+        self.output_frame_id = self.get_parameter('output_frame_id').value
         self.voxel_size = self.get_parameter('voxel_size').value
         self.skip_points = self.get_parameter('skip_points').value
         self.method = self.get_parameter('method').value
+        self._tf_parent = self.get_parameter('tf_parent_frame').value
+        self._tf_child  = self.get_parameter('tf_child_frame').value
 
         # Subscriber and Publisher
         self.sub = self.create_subscription(
@@ -34,15 +61,50 @@ class PointCloudDownsampler(Node):
 
         self.pub = self.create_publisher(PointCloud2, output_topic, 10)
 
+        self._tf_buffer   = tf2_ros.Buffer()
+        self._tf_listener = tf2_ros.TransformListener(self._tf_buffer, self)
+
+        # Offset (nanoseconds) = wall_ns - gz_sim_ns, updated from /clock.
+        # Used to convert Gazebo sim timestamps to wall-clock time so TF
+        # lookups (which run on wall clock via MAVROS) succeed.
+        self._gz_to_wall_offset_ns: int | None = None
+        self.create_subscription(Clock, '/clock', self._clock_cb, _CLOCK_QOS)
+
         self.get_logger().info(f'Downsampling point clouds from {input_topic} to {output_topic}')
         self.get_logger().info(f'Method: {self.method}, Voxel size: {self.voxel_size}, Skip: {self.skip_points}')
 
+    def _clock_cb(self, msg: Clock) -> None:
+        # self.get_clock().now() is preferred over time.time() — both are wall
+        # clock when use_sim_time is false, but get_clock() is on the same
+        # clock domain as odom_relay's TF timestamps.
+        # wall_ns = int(time.time() * 1e9)  # alternative: Python system clock
+        wall_ns = self.get_clock().now().nanoseconds
+        gz_ns = msg.clock.sec * 10**9 + msg.clock.nanosec
+        self._gz_to_wall_offset_ns = wall_ns - gz_ns
+
     def pointcloud_callback(self, msg):
+        if self._gz_to_wall_offset_ns is None:
+            return  # no clock offset yet — drop until /clock arrives
+        gz_stamp_ns = msg.header.stamp.sec * 10**9 + msg.header.stamp.nanosec
+        corrected_ns = gz_stamp_ns + self._gz_to_wall_offset_ns
+
         if self.method == 'voxel':
             downsampled_msg = self.voxel_downsample(msg)
         else:
             downsampled_msg = self.skip_downsample(msg)
 
+        # downsampled_msg.header.stamp = rclpy.time.Time(nanoseconds=corrected_ns).to_msg()
+        # downsampled_msg.header.stamp = self.get_clock().now().to_msg()
+        try:
+            tf_stamped = self._tf_buffer.lookup_transform(
+                self._tf_parent, self._tf_child, rclpy.time.Time())
+            downsampled_msg.header.stamp = tf_stamped.header.stamp
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException,
+                tf2_ros.ExtrapolationException):
+            downsampled_msg.header.stamp = self.get_clock().now().to_msg()
+            self.get_logger().warn('TF lookup failed, using wall clock time')
+
+        downsampled_msg.header.stamp = self.get_clock().now().to_msg()
         self.pub.publish(downsampled_msg)
 
     def skip_downsample(self, msg):

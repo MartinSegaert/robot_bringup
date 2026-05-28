@@ -5,7 +5,8 @@ cbf_pc_selector:
             1:  # gz lidar
                 topic: /rmf_unipilot/lidar/points
                 frame: rmf_unipilot/base_link/lidar
-                bins_w: 32
+                # bins_w: 32
+                bins_w: 16
                 bins_h: 16
                 percentile: 20  # [%]
                 min_per_bin: 20

@@ -1,0 +1,239 @@
+  # Configurations for the exploration pipeline.
+  # For more details, please check comments in the params.h file and the wiki.
+  #-------------------------------------------------------------------------------
+  # ROBOT CONFIGURATION
+  #-------------------------------------------------------------------------------
+RobotParams:
+  type:               kAerialRobot
+  size:               [0.5, 0.5, 0.3] # Actual size of the robot in meters [x, y, z]
+  size_extension_min: [0.0, 0.0, 0.0] # minimum extension outside of robot size allowed to operate
+  size_extension:     [0.2, 0.2, 0.2] # maximum extension outside of the robot size
+  center_offset:      [0.0, 0.0, 0.0]
+  relax_ratio:        0.5 # Used to define an intermediate size between size_extension_min and size_extension for planning
+  bound_mode:         kExtendedBound
+  safety_extension:   [1.2, 1.2, 1.0] # Safety extension outside the bounding box of a path segment
+#-------------------------------------------------------------------------------
+# SENSOR CONFIGURATION
+#  sensor_list: Define a set of sensors relevant to the exploration task.
+#  rotations: ZYX order;
+#             all follows ROS convention (X-forward, Y-left, Z-Up).
+#-------------------------------------------------------------------------------
+SensorParams:
+  sensor_list:      ["OS064"]
+  OS064:
+    type:           kLidar
+    max_range:      20
+    center_offset:  [0.0, 0.0, 0.0]
+    rotations:      [0.0, 0.0, 0.0]
+    fov:            [rad(2*pi), rad(0.5*pi)]
+    resolution:     [rad(10.0*pi/180), rad(10.0*pi/180)]
+    frontier_percentage_threshold: 0.03
+
+CameraAnnotationParams:  # Annotate voxels seen by this camera model during the mission
+  sensor_list:      []
+
+#-------------------------------------------------------------------------------
+# SAMPLING SPACE CONFIGURATION
+#   Global: Strictly defined bounds for the whole environment.
+#   Local: Define a local space wrt current robot state for planning.
+#-------------------------------------------------------------------------------
+BoundedSpaceParams:
+  Global:
+    type:           kCuboid
+    min_val:        [10.0, -300.0, -10.0]
+    max_val:        [300.0, 300.0, 20.0]
+  Local:
+    type:           kCuboid
+    min_val:        [-15.0, -15.0, -5.0]
+    max_val:        [15.0, 15.0, 5.0]
+    min_extension:  [-20.0, -20.0, -20.0]
+    max_extension:  [20.0, 20.0, 20.0]
+  LocalSearch:
+    type:           kCuboid
+    min_val:        [-15.0, -15.0, -6.0]
+    max_val:        [15.0, 15.0, 6.0]
+  LocalAdaptiveExp:
+    type:           kCuboid
+    min_val:        [-10.0, -10.0, -0.75]
+    max_val:        [10.0, 10.0, 0.75]
+NoGainZones:
+  g1:  # Back
+    type:           kCuboid
+    min_val:        [-50.0, -10.0, -10.0]
+    max_val:        [2.0, 10.0, 10.0]
+#-------------------------------------------------------------------------------
+# SAMPLING POLICY CONFIGURATION
+#   Sample space limited to 4 states: X, Y, Z, and Heading
+#-------------------------------------------------------------------------------
+RandomSamplerParams:
+  SamplerForExploration:
+    X:
+      pdf_type:       kUniform
+      sample_mode:    kLocal
+    Y:
+      pdf_type:       kUniform
+      sample_mode:    kLocal
+    Z:
+      pdf_type:       kUniform
+      sample_mode:    kLocal
+    Heading:
+      pdf_type:       kUniform
+      sample_mode:    kManual
+      min_val:        rad(-pi)
+      max_val:        rad(pi)
+    Pitch:
+      pdf_type:       kConst
+      sample_mode:    kManual
+      const_val:      0.0
+  SamplerForSearching:
+    X:
+      pdf_type:       kUniform
+      sample_mode:    kLocal
+    Y:
+      pdf_type:       kUniform
+      sample_mode:    kLocal
+    Z:
+      pdf_type:       kUniform
+      sample_mode:    kLocal
+    Heading:
+      pdf_type:       kUniform
+      sample_mode:    kManual
+      min_val:        rad(-pi)
+      max_val:        rad(pi)
+    Pitch:
+      pdf_type:       kConst
+      sample_mode:    kManual
+      const_val:      0.0
+  SamplerForAdaptiveExp:
+    X:
+      pdf_type:       kUniform
+      sample_mode:    kLocal
+    Y:
+      pdf_type:       kUniform
+      sample_mode:    kLocal
+    Z:
+      pdf_type:       kUniform
+      sample_mode:    kLocal
+    Heading:
+      pdf_type:       kUniform
+      sample_mode:    kManual
+      min_val:        rad(-pi)
+      max_val:        rad(pi)
+    Pitch:
+      pdf_type:       kConst
+      sample_mode:    kManual
+      const_val:      0.0
+
+#-------------------------------------------------------------------------------
+# EXPLORATION CONFIGURATION
+# exp_sensor_list: sensors used to compute exploration gain.
+#-------------------------------------------------------------------------------
+PlanningParams:
+  type:             kBasicExploration
+  rr_mode:          kGraph
+  exp_sensor_list:  ["OS064"]
+  inspection_sensor_list:  []
+  v_max:            1.5 # max velocity m/s — slightly higher for helicopter
+  v_homing_max:     1.2 # max velocity m/s
+  yaw_rate_max:     0.2 # max angular velocity rad/s
+  yaw_tangent_correction: false
+  edge_length_min:  0.2
+  edge_length_max:  4.0
+  edge_overshoot:   0.0
+  num_vertices_max: 500
+  num_edges_max:    7000
+  num_loops_cutoff: 2000
+  num_loops_max:    3000
+  nearest_range:    4.0
+  nearest_range_min: 0.2
+  nearest_range_max: 4.0
+  use_current_state: true
+  use_ray_model_for_volumetric_gain: true
+  exp_gain_voxel_size: 0.8
+  path_length_penalty: 0.2
+  path_direction_penalty: 0.05
+  occupied_voxel_gain: 0.0
+  free_voxel_gain:  1.0
+  unknown_voxel_gain: 60.0
+
+  traverse_length_max: 7.0
+  traverse_time_max: 500.0
+  path_safety_enhance_enable: true
+  augment_free_voxels_time: 3
+  free_frustum_before_planning: false
+  freespace_cloud_enable: false
+  leafs_only_for_volumetric_gain: true
+  cluster_vertices_for_gain: false
+  clustering_radius: 0.5
+  path_interpolation_distance: -0.5
+
+  planning_backward: false
+
+  use_gvi: false
+
+  time_budget_limit: 3000
+  auto_homing_enable: true
+  go_home_if_fully_explored: true
+  auto_global_planner_enable: true
+
+  nonuniform_ray_cast: false
+  ray_cast_step_size_multiplier: 1.0
+  max_low_gain_iters: 3
+
+  use_camera_gain: false
+  annotate_map_with_camera: false
+
+  inspection_planning: false
+  basic_inspection_viewpoints: true
+
+  keep_leaf_yaw_only: true
+
+  box_check_method: 0
+  line_check_method: 1
+
+  add_only_frontiers_to_global_graph: false
+
+  min_coverage_percentage: 0.9
+  inspection_xy_spacing: 1.0
+  inspection_z_spacing: 0.6
+  inspection_thr_esdf_dist: 0.5
+  inspection_target_viewing_range: 1.5
+  inspection_pt_dist: 0.9
+  verification_target_viewing_range: 2.5
+  inspection_graph_vertices: 250
+  max_inspection_vertices: 50
+  num_lkh_iterations: 10
+
+  enable_manhole_traversal: false
+  manhole_alignment_z_offset: 0.0
+  only_manhole_traversal: false
+  manhole_traversal_path_edge_length: 1.25
+
+  use_flipped_yaw: true
+
+  auto_manhole_path_approval: true
+  max_manhole_height: 2.0
+
+  max_exploration_iterations: 300
+  exploration_only: true
+  compartment_centers: [0.0, 0.0, 0.0]
+  compartment_dimensions:
+    type:           kCuboid
+    min_val:        [-5.0, -1.5, 0.5]
+    max_val:        [10.0, 10.5, 2.5]
+
+  geofence_checking_enable: false
+
+AdaptiveObbParams:
+  type: kPca
+  local_pointcloud_range: 50.0
+  bounding_box_size_max: 35
+
+GeofenceParams:
+  AreaList: ["GBack", "G2"]
+  GBack:
+    center: [-4.959, -5.59, 0.0]
+    size:   [4.0, 4.0, 0.0]
+  G2:
+    center: [-3.128, -0.937, 0.0]
+    size:   [2.0, 2.0, 0.0]

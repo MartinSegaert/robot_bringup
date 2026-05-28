@@ -1,0 +1,15 @@
+<launch>
+  <arg name="robot_name"     default="helicopter" />
+  <arg name="config_name"    default="uav_sim_helicopter" />
+  <arg name="ele_map_enable" default="false" />
+
+  <!-- lidar is 0.225 m above base_link in the helicopter SDF model -->
+  <node pkg="tf" type="static_transform_publisher" name="tf_base_link_lidar"
+        args="0 0 0.225 0 0 0 helicopter/base_link helicopter/base_link/lidar 100" />
+
+  <include file="$(find robot_bringup)/launch/ros1/gbplanner_sim.launch">
+    <arg name="robot_name"     value="$(arg robot_name)" />
+    <arg name="config_name"    value="$(arg config_name)" />
+    <arg name="ele_map_enable" value="$(arg ele_map_enable)" />
+  </include>
+</launch>

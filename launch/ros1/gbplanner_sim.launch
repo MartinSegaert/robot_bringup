@@ -1,12 +1,11 @@
 <launch>
   <!-- All settings -->
-  <arg name="rviz_en" default="false" />
   <param name="use_sim_time" value="true"/>
   <arg name="robot_name" default="rmf" />
   <arg name="config_name" default="uav_nmpc_sim" />
   <arg name="ele_map_enable" default="false" />
 
-  <node pkg="tf" type="static_transform_publisher" name="tf_world_map" args="0 0 0 0 0 0 map world 10" />
+  <node pkg="tf" type="static_transform_publisher" name="tf_world_map" args="0 0 0 0 0 0 world map 10" />
 
   <!-- Config files -->
   <arg name="gbplanner_config_file" default="$(find robot_bringup)/config/ros1/gbplanner/$(arg config_name)/gbplanner_config.yaml" />
@@ -25,6 +24,7 @@
   <node pkg="gbplanner" type="gbplanner_node" name="gbplanner_node" output="screen">
 		<remap from="odometry" to="$(arg odometry_topic)" />
 		<remap from="/pointcloud" to="/$(arg robot_name)/lidar/points_downsampled" />
+		<!-- <remap from="/pointcloud" to="/cbf_pc_selector/output_pc" /> -->
 		<rosparam command="load" file="$(arg gbplanner_config_file)" />
 		<rosparam command="load" file="$(arg map_config_file)" />
     <remap from="transform" to="/$(arg robot_name)/base_link/lidar" />
@@ -48,6 +48,8 @@
   <node pkg="robot_bringup" type="pcl_proc.py" name="pcl_proc" output="screen" if="$(arg ele_map_enable)"/>
 
   <node pkg="rviz" type="rviz" name="gbplanner_ui" output="screen" args="-d $(find robot_bringup)/rviz/ros1/$(arg robot_name).rviz"/>
+
+  <include file="$(find joystick_remapper)/launch/joystick_remapper.launch"/>
 
   <!-- <node pkg="manhole_detector" type="manhole_detector_node" name="manhole_detector_node" output="screen">
       <remap from="pcl_in" to="/rslidar_points" />

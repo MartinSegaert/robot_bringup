@@ -1,0 +1,81 @@
+# params/heli_sitl.parm
+#
+# ArduPilot traditional helicopter SITL parameters.
+# Loaded with sim_vehicle.py --add-param-file on first start.
+#
+# These configure the helicopter to work without a physical RC transmitter
+# and to accept MAVLink commands from the HeliManagerNode via MAVROS.
+#
+# ── Rotor Speed Controller ────────────────────────────────────────────────────
+# H_RSC_MODE=2: ESC setpoint mode. The autopilot outputs a fixed PWM setpoint
+# to a governor-equipped ESC. No RC passthrough needed. Motor interlock is
+# still required (via RC channel 8 or the MAVLink RC override) but the RSC
+# does not need manual throttle input.
+H_RSC_MODE,2
+
+# Target throttle sent to the ESC governor [%]. At 70% the simulated rotor
+# reaches full flight RPM within the ramp time.
+H_RSC_SETPOINT,70
+
+# Time to ramp from idle to H_RSC_SETPOINT [s]. Must be ≤ H_RSC_RUNUP_TIME.
+H_RSC_RAMP_TIME,8
+
+# Total time for the rotor to reach operating RPM after interlock [s].
+# HeliManagerNode waits runup_time_s (default 12) which must be ≥ this value.
+H_RSC_RUNUP_TIME,10
+
+# Idle throttle output after arming but before motor interlock [%]
+H_RSC_IDLE,0
+
+# ── Failsafes — disable for headless SITL ─────────────────────────────────────
+# No physical RC transmitter, so suppress all RC-related failsafes.
+FS_THR_ENABLE,0         # Disable throttle/RC failsafe
+FS_GCS_ENABLE,0         # Disable GCS heartbeat failsafe (MAVROS is our GCS)
+FS_EKF_ACTION,0         # Disable EKF failsafe action (rely on SITL GPS)
+
+# ── Arming checks — relax for simulation ──────────────────────────────────────
+# 0 = disable all arming pre-checks.
+# In production this must be re-enabled; in SITL it avoids RC/compass issues.
+ARMING_CHECK,0
+
+# ── GPS ───────────────────────────────────────────────────────────────────────
+# SITL provides perfect GPS. EKF2 is the default estimator.
+EK2_ENABLE,0            # Disable EKF2 (use EKF3 on modern ArduPilot)
+EK3_ENABLE,1
+AHRS_EKF_TYPE,3
+
+# ── GUIDED mode ───────────────────────────────────────────────────────────────
+# Allow GUIDED without a prior loiter/stabilize phase
+GUIDED_OPTIONS,0
+
+# ── MAVROS heartbeat ──────────────────────────────────────────────────────────
+# Keep the GCS failsafe window generous; MAVROS sends at 1 Hz by default
+# but the HeliManagerNode needs time during startup.
+FS_GCS_TIMEOUT,30
+
+# ── Simulation speed ──────────────────────────────────────────────────────────
+# 1.0 = real-time. Increase (e.g. 2.0) for faster-than-real-time testing.
+# Note: HeliManagerNode timers are wall-clock based; only increase with care.
+SIM_SPEEDUP,1
+
+# ── Motor interlock channel ───────────────────────────────────────────────────
+# Assign MOTOR_INTERLOCK function (32) to RC channel 8.
+# HeliManagerNode drives ch8 LOW before arming, HIGH after arming.
+# Explicitly set here so a stale eeprom cannot override it.
+RC8_OPTION,32
+
+# ── Serial / MAVLink output ───────────────────────────────────────────────────
+# SERIAL1 is the second telemetry port forwarded to MAVROS (UDP 14551)
+SERIAL1_PROTOCOL,2      # MAVLink 2
+SERIAL1_BAUD,115        # Irrelevant for UDP but must be set
+
+# ── Stream rates ──────────────────────────────────────────────────────────────
+# MavProxy requests streams via REQUEST_DATA_STREAM (controlled by --streamrate).
+# These SR0_* params set the floor so MAVROS gets 50 Hz position regardless
+# of which REQUEST_DATA_STREAM wins the race.
+SR0_POSITION,50         # LOCAL_POSITION_NED → /mavros/local_position/odom
+SR0_EXTRA1,50           # ATTITUDE
+SR0_EXT_STAT,5          # SYS_STATUS, GPS_RAW_INT
+SR0_RC_CHAN,10          # RC_CHANNELS
+SR1_POSITION,50
+SR1_EXTRA1,50

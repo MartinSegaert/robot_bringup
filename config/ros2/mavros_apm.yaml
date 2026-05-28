@@ -1,0 +1,88 @@
+# config/mavros_apm.yaml
+#
+# MAVROS node parameters for connecting to ArduPilot tradheli SITL.
+# Loaded by the ros2_launch_mavros service.
+#
+# ArduPilot SITL opens the following UDP ports by default:
+#   14550 — GCS (QGroundControl auto-connects here)
+#   14551 — Second telemetry / companion computer port  ← MAVROS connects here
+#
+# MavProxy --out udp:localhost:14551 sends packets TO port 14551 on this host.
+# MAVROS binds on 14551 and auto-detects the SITL reply address from the
+# first received packet (leave the @<host>:<port> suffix empty).
+
+/**:
+  ros__parameters:
+    # Connection to ArduPilot SITL
+    fcu_url: "udp://0.0.0.0:14551@"
+
+    # GCS re-broadcast (optional — lets QGC connect on the host side via MavProxy's port 14550)
+    gcs_url: "udp://@localhost:14550"
+
+    # MAVLink system/component IDs
+    system_id: 255        # GCS system ID
+    component_id: 240
+    target_system_id: 1   # ArduPilot default
+    target_component_id: 1
+
+    # Frame transforms
+    # MAVROS uses ENU internally; ArduPilot uses NED.
+    # The HeliManagerNode performs its own ENU→NED conversion.
+    local_position:
+      tf:
+        send: true
+        frame_id: "map"
+        child_frame_id: "helicopter/base_link"
+
+    # Heartbeat to keep ArduPilot from triggering GCS failsafe
+    conn:
+      heartbeat_rate: 1.0   # Hz
+      heartbeat_mav_type: 6  # MAV_TYPE_GCS
+
+    # Plugin list — enable only what we need (saves resources)
+    plugin_denylist:
+      - "actuator_control"
+      - "adsb"
+      - "cam_imu_sync"
+      - "cellular_status"
+      - "companion_process"
+      - "distance_sensor"
+      - "fake_gps"
+      - "ftp"
+      - "geofence"
+      - "gimbal_control"
+      - "gps_rtk"
+      - "gps_status"
+      - "hil"
+      - "home_position"
+      - "image_pub"
+      - "landing_target"
+      - "log_transfer"
+      - "manual_control"
+      - "mission"
+      - "mount_control"
+      - "nav_controller_output"
+      - "obstacle_distance"
+      - "optical_flow"
+      - "param"
+      - "play_tune"
+      - "px4flow"
+      - "rangefinder"
+      - "safety_area"
+      - "setpoint_accel"
+      - "setpoint_attitude"
+      - "setpoint_trajectory"
+      - "terrain"
+      - "time_sync"
+      - "trajectory"
+      - "vibration"
+      - "vfr_hud"
+      - "waypoint"
+      - "wind_estimation"
+
+    # Keep these enabled (essential for HeliManagerNode)
+    # setpoint_raw        — acceleration setpoints
+    # rc_io               — RC channel override (motor interlock)
+    # command             — arming, mode, takeoff
+    # local_position      — odometry / altitude feedback
+    # state               — heartbeat / mode / arm state
