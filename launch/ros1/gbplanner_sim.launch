@@ -1,6 +1,6 @@
 <launch>
   <!-- All settings -->
-  <param name="use_sim_time" value="false"/>
+  <param name="use_sim_time" value="true"/>
   <arg name="robot_name" default="rmf" />
   <arg name="config_name" default="uav_nmpc_sim" />
   <arg name="ele_map_enable" default="false" />

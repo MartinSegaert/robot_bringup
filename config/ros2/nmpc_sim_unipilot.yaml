@@ -8,7 +8,7 @@ ref:
         enable: False
         dang_min: 1  # angle threshold to trigger stop and turn [rad]
     yaw_align_dmin: 0.1  # minimum distance under which yaw alignment is disabled [m]
-    vref: 2.5 #1.75  # norm of reference velocity [m/s]
+    vref: 2.75 # 2.85 #1.75  # norm of reference velocity [m/s]
     wzref: 1  # norm of reference yawrate [rad/s]
     zref: 2  # desired hovering z for takeoff [m]
 
@@ -54,11 +54,11 @@ mpc:
     model: att  # allowed models: acc, att, att_tau, rates, wrench, props
     weights:
         # pos:    [0, 0, 5]  # px, py, pz
-        vel:    [3, 3, 3]  # vx, vy, vz
-        att:    [50, 50, 100]  # roll, pitch, yaw
+        # vel:    [3, 3, 3]  # vx, vy, vz
+        # att:    [50, 50, 100]  # roll, pitch, yaw
         pos:    [2, 2, 1]  # px, py, pz 0
-        # vel:    [5, 5, 5]  # vx, vy, vz 3
-        # att:    [50, 50, 20]  # roll, pitch, yaw
+        vel:    [5, 5, 5]  # vx, vy, vz 3
+        att:    [50, 50, 20]  # roll, pitch, yaw
         rates:  [0, 0, 3]  # wx, wy, wz
         acc:    0.05  # typically small value, used to penalize acc or aacc if applicable
         slack_df:       [200, 50]  # slack weights (L1, L2) on df constraint
@@ -66,7 +66,7 @@ mpc:
         slack_brake:    None  # slack weights (L1, L2) on braking dist constraint
     N: 10  # nb of shooting nodes
     T: 1.5  # lenght of horizon [s]
-    bound_margin: 0.25 # 0.15  # safety margin for collision constraint [m]
+    bound_margin: 0.15 # 0.15  # safety margin for collision constraint [m]
     control_loop_time: 1 #10  # minimum control period [ms]
     uniform_dt: True  # dt is uniformly sampled as T/N, or nonuniform to have denser sampling for the first shooting_nodes
     nb_short_nodes: 2  # number of shooting node with dense nonuniform sampling

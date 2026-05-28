@@ -2,7 +2,7 @@ name: sim_lidar  # defines name of generated code
 
 ## mission parameters
 ref:
-    yaw_mode: align  # allowed modes: ref, align, current, zero
+    yaw_mode: ref  # allowed modes: ref, align, current, zero
     align_yaw_offset: 0  # yaw offset in align mode [rad]
     stop_and_turn:  # maximum yaw error above which the reference velocity is set to 0 to enable stop-and-turn behavior
         enable: False

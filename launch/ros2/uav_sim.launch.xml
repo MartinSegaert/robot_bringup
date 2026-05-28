@@ -5,6 +5,8 @@
 
     <!-- world parameters -->
     <arg name="verbosity" default="4"/>
+    <!-- <arg name="world" default="corridor_pillars"/> -->
+    <!-- <arg name="world" default="niosh_osrf"/> -->
     <arg name="world" default="darpa_cave_01"/>
     <arg name="rviz" default="false"/>
     <arg name="headless" default="false"/>
@@ -17,8 +19,10 @@
     <arg name="allow_renaming" default="true"/>
     <arg name="x" default="40"/>
     <arg name="y" default="5"/>
-    <!-- <arg name="x" default="0"/>
-    <arg name="y" default="0"/> -->
+    <!-- <arg name="x" default="3.3"/>
+    <arg name="y" default="5.4"/> -->
+    <!-- <arg name="x" default="0.0"/>
+    <arg name="y" default="0.0"/> -->
     <arg name="z" default="0.5"/>
     <arg name="R" default="0.0"/>
     <arg name="P" default="0.0"/>
@@ -32,7 +36,7 @@
     </include>
 
     <!-- spawn robot -->
-    <node pkg="ros_gz_sim" exec="create" name="spawn_model" launch-prefix="bash -c 'sleep 3; $0 $@'" args="
+    <node pkg="ros_gz_sim" exec="create" name="spawn_model" launch-prefix="bash -c 'sleep 8; $0 $@'" args="
         -world map
         -name $(var robot_name)
         -file robots/$(var robot_type)/model.sdf

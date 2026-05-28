@@ -138,7 +138,7 @@ def generate_launch_description():
         node_ref_gen,
         node_sdfnmpc,
         # node_rviz,
-        node_viz_vae,
+        # node_viz_vae,
         # node_viz_sdf_2D,
     ])
     
