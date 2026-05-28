@@ -7,7 +7,7 @@
     <arg name="verbosity" default="4"/>
     <arg name="world" default="darpa_cave_01"/>
     <arg name="rviz" default="false"/>
-    <arg name="headless" default="false"/>
+    <arg name="headless" default="true"/>
     <let name="headless_string" value="-s --headless-rendering" if="$(var headless)"/>
     <let name="headless_string" value="" unless="$(var headless)"/>
 

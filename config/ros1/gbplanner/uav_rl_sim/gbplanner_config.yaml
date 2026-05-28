@@ -60,7 +60,7 @@ CameraAnnotationParams:  # Annotate voxels seen by this camera model during the 
 BoundedSpaceParams:
   Global:
     type:           kCuboid
-    min_val:        [-2000.0, -3000.0, -100.0]
+    min_val:        [36.0, -3000.0, -100.0]
     max_val:        [3000.0, 3000.0, 200.0]
     # min_val:        [-0.5, -2.5, -0.2]
     # max_val:        [4.0, 1.2, 2.0]
@@ -214,7 +214,7 @@ PlanningParams:
   free_voxel_gain:  1.0 # prefer directions towards more free voxels in case of the dead-end
   unknown_voxel_gain: 60.0
 
-  traverse_length_max: 7.0 # Maximum length of the best path will be truncated to for actual traversal
+  traverse_length_max: 8.0 # Maximum length of the best path will be truncated to for actual traversal
   traverse_time_max: 500.0
   path_safety_enhance_enable: true  # Disable for ballast small, non corridor like environments
   augment_free_voxels_time: 3
