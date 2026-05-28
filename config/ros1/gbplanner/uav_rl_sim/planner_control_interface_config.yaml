@@ -1,11 +1,11 @@
 run_mode: kReal
 trigger_mode: kManual
 init_motion_enable: false
-planner_trigger_lead_time: 0.01
+planner_trigger_lead_time: 0.0
 smooth_heading_enable: false
 smooth_homing_enable: false
 # For flight:
-path_end_dist_thr: 2.7 # 0.5
+path_end_dist_thr: 4.5 # 0.5
 path_end_yaw_thr: 10.2
 path_end_dist_scale: 1.0 #0.75
 path_progression_dist_thr: 8.0 # 0.9
