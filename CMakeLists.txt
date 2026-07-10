@@ -53,6 +53,12 @@ else()
     DESTINATION share/${PROJECT_NAME}/
     )
 
+    # Install Gazebo resources used by custom simulation launch files.
+    install(DIRECTORY
+    gz
+    DESTINATION share/${PROJECT_NAME}/
+    )
+
     file(GLOB PY_SCRIPTS scripts/ros2/*.py)
     install(PROGRAMS
         ${PY_SCRIPTS}
