@@ -1,5 +1,6 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction
+from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node, PushRosNamespace, SetRemap
 
@@ -11,6 +12,8 @@ def generate_launch_description():
     odometry = LaunchConfiguration('odometry')
     output_topic = LaunchConfiguration('output_topic')
     joystick_topic = LaunchConfiguration('joystick_topic')
+    viz_sdf_2d = LaunchConfiguration('viz_sdf_2d')
+    viz_sdf_3d = LaunchConfiguration('viz_sdf_3d')
     cfg_file = LaunchConfiguration('cfg_file')
 
     declare_args = [
@@ -20,6 +23,8 @@ def generate_launch_description():
         DeclareLaunchArgument('odometry', default_value='/rmf/odom'),
         DeclareLaunchArgument('output_topic', default_value='/sdf_nmpc/cmd/acc'),
         DeclareLaunchArgument('joystick_topic', default_value='/sdf_nmpc/joystick'),
+        DeclareLaunchArgument('viz_sdf_2d', default_value='true'),
+        DeclareLaunchArgument('viz_sdf_3d', default_value='true'),
         DeclareLaunchArgument(
             'cfg_file',
             default_value='/workspace/src/robot_bringup/config/ros2/nmpc_sim_lidar_goal_velocity.yaml',
@@ -58,6 +63,22 @@ def generate_launch_description():
             parameters=common_params,
             output='screen',
         ),
+        Node(
+            package='sdf_nmpc_ros',
+            executable='viz_sdf_3D_node.py',
+            name='viz_sdf_3D',
+            parameters=common_params,
+            condition=IfCondition(viz_sdf_3d),
+            output='screen',
+        ),
+        Node(
+            package='sdf_nmpc_ros',
+            executable='viz_sdf_2D_node.py',
+            name='viz_sdf_2D',
+            parameters=common_params,
+            condition=IfCondition(viz_sdf_3d),
+            output='screen',
+        )
     ])
 
     return LaunchDescription(declare_args + [group])
