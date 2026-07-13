@@ -7,6 +7,7 @@
     <arg name="verbosity" default="4"/>
     <arg name="world" default="my_world"/>
     <arg name="rviz" default="false"/>
+    <arg name="rviz_config" default="$(find-pkg-share rmf_gz)/rviz/rmf_default.rviz"/>
     <arg name="headless" default="false"/>
     <let name="headless_string" value="-s --headless-rendering" if="$(var headless)"/>
     <let name="headless_string" value="" unless="$(var headless)"/>
@@ -69,6 +70,6 @@
     <node pkg="tf2_ros" exec="static_transform_publisher" name="tf_depth_cam_optical" args="0 0 0 0.5 -0.5 0.5 -0.5 rmf/base_link/depth_cam rmf/base_link/depth_cam/optical"/>
 
     <!-- rviz -->
-    <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share rmf_gz)/rviz/rmf_default.rviz" if="$(var rviz)"/>
+    <node pkg="rviz2" exec="rviz2" args="-d $(var rviz_config)" if="$(var rviz)"/>
 
 </launch>
