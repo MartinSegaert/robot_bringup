@@ -1,5 +1,8 @@
 run_mode: kReal
 trigger_mode: kManual
+target_navigation_reaching_radius: 2.0
+target_navigation_replan_period: 2.0
+target_navigation_max_failures: 5
 init_motion_enable: false
 planner_trigger_lead_time: 0.0
 smooth_heading_enable: false
