@@ -33,8 +33,9 @@ nn:
 ## ros-specific params
 ros:
     control_interface: acc  # allowed interfaces: acc, TRPYr, TRrPrYr (not implemented), props (not implemented)
+    auto_enable_sdf: True  # enable SDF constraints after the first valid latent observation
     timeout_ref: 0.5  # allowed time without new reference before timing out controller [s]
-    timeout_img: 1  # allowed time without new image before timing out controller [s]
+    timeout_img: 3  # allowed time without new image before timing out controller [s]
     ref:
         ref_mode: joystick  # allowed modes: topic, joystick
         stop_and_go: False  # go to wp with 0 velocity instead of having a sliding window as reference    
