@@ -1,4 +1,4 @@
-name: sim_lidar  # defines name of generated code
+name: sim_lidar_goal_velocity  # defines name of generated code
 
 ## mission parameters
 ref:
@@ -64,7 +64,7 @@ mpc:
         slack_brake:    None  # slack weights (L1, L2) on braking dist constraint
     N: 20  # nb of shooting nodes
     T: 1.5  # lenght of horizon [s]
-    bound_margin: 0.15  # safety margin for collision constraint [m]
+    bound_margin: 0.4  # safety margin for collision constraint [m]
     control_loop_time: 10  # minimum control period [ms]
     uniform_dt: True  # dt is uniformly sampled as T/N, or nonuniform to have denser sampling for the first shooting_nodes
     nb_short_nodes: 2  # number of shooting node with dense nonuniform sampling

@@ -76,7 +76,7 @@ def generate_launch_description():
             executable='viz_sdf_2D_node.py',
             name='viz_sdf_2D',
             parameters=common_params,
-            condition=IfCondition(viz_sdf_3d),
+            condition=IfCondition(viz_sdf_2d),
             output='screen',
         )
     ])
