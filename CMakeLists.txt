@@ -20,8 +20,12 @@ endif()
 if(ROS_VERSION EQUAL 1)
   # ROS1 Build
   find_package(catkin REQUIRED COMPONENTS
+    geometry_msgs
+    planner_msgs
     roscpp
     rospy
+    std_msgs
+    std_srvs
     )
 
     catkin_package(
@@ -34,6 +38,19 @@ if(ROS_VERSION EQUAL 1)
     include_directories(
     # include
     ${catkin_INCLUDE_DIRS}
+    )
+
+    catkin_install_python(PROGRAMS
+      scripts/ros1/waypoint_follower.py
+      DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+
+    install(DIRECTORY config/ros1/waypoint_follower
+      DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config/ros1
+    )
+
+    install(FILES launch/ros1/waypoint_follower.launch
+      DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch/ros1
     )
 
 else()

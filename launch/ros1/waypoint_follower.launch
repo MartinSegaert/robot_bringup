@@ -1,0 +1,17 @@
+<launch>
+  <arg name="waypoint_file"
+       default="$(find robot_bringup)/config/ros1/waypoint_follower/waypoints.yaml" />
+  <arg name="autostart" default="false" />
+  <arg name="waypoint_service" default="/pci_to_waypoint" />
+  <arg name="status_topic" default="/gbplanner_status" />
+
+  <node pkg="robot_bringup"
+        type="waypoint_follower.py"
+        name="waypoint_follower"
+        output="screen">
+    <rosparam command="load" file="$(arg waypoint_file)" />
+    <param name="autostart" value="$(arg autostart)" />
+    <param name="waypoint_service" value="$(arg waypoint_service)" />
+    <param name="status_topic" value="$(arg status_topic)" />
+  </node>
+</launch>

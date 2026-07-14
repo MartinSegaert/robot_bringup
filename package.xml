@@ -12,7 +12,10 @@
   <buildtool_depend condition="$ROS_VERSION == 2">ament_cmake_python</buildtool_depend>
 
   <depend condition="$ROS_VERSION == 1">rospy</depend>
+  <depend condition="$ROS_VERSION == 1">geometry_msgs</depend>
+  <depend condition="$ROS_VERSION == 1">planner_msgs</depend>
   <depend condition="$ROS_VERSION == 1">std_msgs</depend>
+  <depend condition="$ROS_VERSION == 1">std_srvs</depend>
 
   <depend condition="$ROS_VERSION == 2">rclpy</depend>
 

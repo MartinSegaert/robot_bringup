@@ -1,0 +1,31 @@
+# Waypoints are expressed in the GBPlanner world frame and visited in order.
+# Replace these example coordinates with points that are safe for your map.
+frame_id: world
+inter_waypoint_delay: 1.0
+retry_delay: 2.0
+max_retries: 0
+
+waypoints:
+  - name: waypoint_1
+    x: 75.0
+    y: 0.0
+    z: 3.0
+    yaw_deg: 0.0
+
+  - name: waypoint_2
+    x: 125.0
+    y: 0.0
+    z: 23.0
+    yaw_deg: 0.0
+
+  - name: waypoint_3
+    x: 125.0
+    y: -30.0
+    z: 23.0
+    yaw_deg: -90.0
+
+  - name: waypoint_4
+    x: 0.0
+    y: 0.0
+    z: 3.0
+    yaw_deg: 180.0
