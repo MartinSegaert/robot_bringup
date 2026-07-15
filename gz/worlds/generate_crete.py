@@ -13,17 +13,16 @@ def fmt(value):
     return f"{value:.3f}".rstrip("0").rstrip(".")
 
 
-def random_position(rng, x_range, y_range, keepout_radius, max_tries=1000):
-    for _ in range(max_tries):
-        x = rng.uniform(*x_range)
-        y = rng.uniform(*y_range)
-        if math.hypot(x, y) >= keepout_radius:
-            return x, y
-
-    raise RuntimeError(
-        "Could not place an obstacle outside the keepout radius. "
-        "Increase the area or reduce --keepout-radius."
-    )
+def random_position(x_range: list[float], y_range: list[float], z_range: list[float] = [0.0, 0.0], rng: random.Random|None = None):
+    if rng is None:
+      x = random.uniform(*x_range)
+      y = random.uniform(*y_range)
+      z = random.uniform(*z_range)
+    else:
+      x = rng.uniform(*x_range)
+      y = rng.uniform(*y_range)
+      z = rng.uniform(*z_range)
+    return x, y, z
 
 
 def material_xml(color):
@@ -175,223 +174,132 @@ def trapezoid_xml(name: str, p_1: tuple, p_2: tuple, p_3: tuple, p_4: tuple, hei
 def get_random_color():
     return (random.uniform(0.0, 1.0), random.uniform(0.0, 1.0), random.uniform(0.0, 1.0), 1.0)
 
-def generate_obstacles_hill_1(offset: tuple = (0, 0)):
-    obstacles = []
-
-    height_hill = 10
-    width_hill = 100
-    length_hill_up = 10
-    length_plane = 30
-    length_hill_down = 15
-
-    hill_id = 1
-
-    # Hill up
-    color = get_random_color()
-    obstacles.append(triangle_xml(
-        name=f'hill_up_{hill_id}',
-        position=(offset[0], offset[1] + width_hill/2, 0),
-        orientation=(90, 0, 0),
-        height=width_hill,
-        p_1=(0, 0), p_2=(length_hill_up, 0), p_3=(length_hill_up, height_hill),
-        color=color)
-    )
-
-    # plane
-    color = get_random_color()
-    obstacles.append(box_xml(
-        name=f"plane_{hill_id}",
-        x=offset[0]+length_hill_up+length_plane/2, y=offset[1],
-        yaw=0,
-        length=length_plane, width=width_hill,
-        height=height_hill,
-        color=color
-      )
-    )
-
-    # Hill down
-    color = get_random_color()
-    obstacles.append(triangle_xml(
-        name=f'hill_down_{hill_id}',
-        position=(offset[0] + length_hill_up + length_plane + length_hill_down, offset[1] - width_hill/2, 0),
-        orientation=(90, 0, 180),
-        height=width_hill,
-        p_1=(0, 0), p_2=(length_hill_down, 0), p_3=(length_hill_down, height_hill),
-        color=color)
-    )
-
-    # obstacle 1
-    x_ratio_plane = 1/3
-    y_pos = 0
-    color = get_random_color()
-    obstacles.append(box_xml(
-        name=f"obstacle_1_{hill_id}",
-        x=offset[0]+length_hill_up+length_plane*x_ratio_plane,
-        y=offset[1]+y_pos,
-        yaw=0,
-        length=3, width=5,
-        height=height_hill+5,
-        color=color
-      )
-    )
-
-    # obstacle 2
-    x_ratio_plane = 2/3
-    y_pos = 4
-    color = get_random_color()
-    obstacles.append(box_xml(
-        name=f"obstacle_2_{hill_id}",
-        x=offset[0]+length_hill_up+length_plane*x_ratio_plane,
-        y=offset[1]+y_pos,
-        yaw=0,
-        length=5, width=3,
-        height=height_hill+4,
-        color=color
-      )
-    )
-
-    # obstacle 3
-    x_ratio_plane = 2/3
-    y_pos = -6
-    color = get_random_color()
-    obstacles.append(box_xml(
-        name=f"obstacle_3_{hill_id}",
-        x=offset[0]+length_hill_up+length_plane*x_ratio_plane,
-        y=offset[1]+y_pos,
-        yaw=0,
-        length=3, width=7,
-        height=height_hill+3,
-        color=color
-      )
-    )
-
-    # obstacle 4
-    color = get_random_color()
-    obstacles.append(box_xml(
-        name=f"obstacle_4_{hill_id}",
-        x=offset[0]+length_hill_up+length_plane + length_hill_down/2,
-        y=offset[1],
-        yaw=0,
-        length=3, width=10,
-        height=height_hill,
-        color=color
-      )
-    )
-
-    return obstacles
+def generate_hill(
+    hill_id: int,
+    offset: tuple = (0, 0),
+    height_hill: float|None = None,
+    width_hill: float|None = None,
+    length_ramp_up: float|None = None,
+    length_plane: float|None = None,
+    length_ramp_down: float|None = None,
+    n_obstacles: int|None = None
+  ) -> list:
     
-def generate_obstacles_hill_2(offset: tuple = (0, 0)):
-    obstacles = []
+  obstacles = []
 
-    height_hill = 20
-    width_hill = 100
-    length_hill_up = 20
-    length_plane = 30
-    length_hill_down = 5
+  if height_hill is None:
+      height_hill = random.uniform(5, 20)
+  if width_hill is None:
+      width_hill = random.uniform(50, 250)
+  if length_ramp_up is None:
+      length_ramp_up = random.uniform(10, 40)
+  if length_plane is None:
+      length_plane = random.uniform(30, 150)
+  if length_ramp_down is None:
+      length_ramp_down = random.uniform(10, 40)
+  if n_obstacles is None:
+      n_obstacles = random.randint(0, 10)
 
-    hill_id = 2
+  ## Hill
+  # Hill up
+  color = get_random_color()
+  obstacles.append(triangle_xml(
+      name=f'hill_up_{hill_id}',
+      position=(offset[0], offset[1] + width_hill/2, 0),
+      orientation=(90, 0, 0),
+      height=width_hill,
+      p_1=(0, 0), p_2=(length_ramp_up, 0), p_3=(length_ramp_up, height_hill),
+      color=color)
+  )
 
-    # Hill up
-    color = get_random_color()
-    obstacles.append(triangle_xml(
-        name=f'hill_up_{hill_id}',
-        position=(offset[0], offset[1] + width_hill/2, 0),
-        orientation=(90, 0, 0),
-        height=width_hill,
-        p_1=(0, 0), p_2=(length_hill_up, 0), p_3=(length_hill_up, height_hill),
-        color=color)
+  # plane
+  color = get_random_color()
+  obstacles.append(box_xml(
+      name=f"plane_{hill_id}",
+      x=offset[0]+length_ramp_up+length_plane/2, y=offset[1],
+      yaw=0,
+      length=length_plane, width=width_hill,
+      height=height_hill,
+      color=color
     )
+  )
 
-    # plane
-    color = get_random_color()
-    obstacles.append(box_xml(
-        name=f"plane_{hill_id}",
-        x=offset[0]+length_hill_up+length_plane/2, y=offset[1],
-        yaw=0,
-        length=length_plane, width=width_hill,
-        height=height_hill,
-        color=color
+  # Hill down
+  color = get_random_color()
+  obstacles.append(triangle_xml(
+      name=f'hill_down_{hill_id}',
+      position=(offset[0] + length_ramp_up + length_plane + length_ramp_down, offset[1] - width_hill/2, 0),
+      orientation=(90, 0, 180),
+      height=width_hill,
+      p_1=(0, 0), p_2=(length_ramp_down, 0), p_3=(length_ramp_down, height_hill),
+      color=color)
+  )
+
+  # Obstacles
+  color = get_random_color()
+  for i in range(n_obstacles):
+      position = random_position(
+          x_range=[offset[0] + length_ramp_up + 1/6 * length_plane, offset[0] + length_ramp_up + 5/6*length_plane],
+          y_range=[offset[1] - 3/4*width_hill/2, offset[1] + 3/4*width_hill/2]
       )
-    )
-
-    # Hill down
-    color = get_random_color()
-    obstacles.append(triangle_xml(
-        name=f'hill_down_{hill_id}',
-        position=(offset[0] + length_hill_up + length_plane + length_hill_down, offset[1] - width_hill/2, 0),
-        orientation=(90, 0, 180),
-        height=width_hill,
-        p_1=(0, 0), p_2=(length_hill_down, 0), p_3=(length_hill_down, height_hill),
-        color=color)
-    )
-
-    # obstacle 1
-    x_ratio_plane = 1/3
-    y_pos = 0
-    color = get_random_color()
-    obstacles.append(box_xml(
-        name=f"obstacle_1_{hill_id}",
-        x=offset[0]+length_hill_up+length_plane*x_ratio_plane,
-        y=offset[1]+y_pos,
-        yaw=0,
-        length=3, width=5,
-        height=height_hill+5,
-        color=color
+      obstacles.append(
+          box_xml(
+              name=f"obstacle_{i}_{hill_id}",
+              x=position[0], y=position[1],
+              yaw=random.uniform(0, 360),
+              length=random.uniform(1, 7), width=random.uniform(1, 7),
+              height=height_hill+random.uniform(1, 7),
+              color=color
+          )
       )
-    )
 
-    # obstacle 2
-    x_ratio_plane = 1/3
-    y_pos = 15
-    color = get_random_color()
-    obstacles.append(box_xml(
-        name=f"obstacle_2_{hill_id}",
-        x=offset[0]+length_hill_up+length_plane*x_ratio_plane,
-        y=offset[1]+y_pos,
-        yaw=0,
-        length=5, width=3,
-        height=height_hill+4,
-        color=color
-      )
-    )
-
-    # obstacle 3
-    x_ratio_plane = 2/3
-    y_pos = -12
-    color = get_random_color()
-    obstacles.append(box_xml(
-        name=f"obstacle_3_{hill_id}",
-        x=offset[0]+length_hill_up+length_plane*x_ratio_plane,
-        y=offset[1]+y_pos,
-        yaw=0,
-        length=3, width=7,
-        height=height_hill+3,
-        color=color
-      )
-    )
-
-    # obstacle 4
-    x_ratio_plane = 2/3
-    y_pos = -25
-    color = get_random_color()
-    obstacles.append(box_xml(
-        name=f"obstacle_4_{hill_id}",
-        x=offset[0]+length_hill_up+length_plane*x_ratio_plane,
-        y=offset[1]+y_pos,
-        yaw=0,
-        length=3, width=7,
-        height=height_hill+3,
-        color=color
-      )
-    )
-
-    return obstacles
+  return obstacles
 
 
 def generate_obstacles():
     obstacles = []
-    obstacles.extend(generate_obstacles_hill_1(offset=(5, 0)))
-    obstacles.extend(generate_obstacles_hill_2(offset=(90, 0)))
+    # hill 1
+    height_hill = 10
+    width_hill = 250
+    length_ramp_up = 10
+    length_plane = 30
+    length_ramp_down = 15
+    obstacles.extend(
+        generate_hill(
+          hill_id=1, offset=(5, 0),
+          height_hill=height_hill, width_hill=width_hill, length_ramp_up=length_ramp_up, length_plane=length_plane, length_ramp_down=length_ramp_down,
+          n_obstacles=10
+      )
+    )
+
+    length_hill_1 = length_ramp_up + length_plane + length_ramp_down
+    gap_hills = 50
+
+    # hill 2
+    height_hill = 20
+    length_ramp_up = 20
+    length_plane = 40
+    length_ramp_down = 5
+    obstacles.extend(
+        generate_hill(
+            hill_id=2, offset=(length_hill_1 + gap_hills, 0),
+            height_hill=height_hill, width_hill=width_hill, length_ramp_up=length_ramp_up, length_plane=length_plane, length_ramp_down=length_ramp_down,
+            n_obstacles=10
+      )
+    )
+    
+    # Building (between hills)
+    obstacles.append(
+        box_xml(
+            name="building",
+            x=length_hill_1 + gap_hills/2, y= -3/4*width_hill/2,
+            yaw=random.uniform(0, 90),
+            length=gap_hills/2, width=gap_hills/2,
+            height=random.uniform(30, 50),
+            color=get_random_color()
+        )
+    )
+
     return "\n\n".join(obstacles)
 
 
