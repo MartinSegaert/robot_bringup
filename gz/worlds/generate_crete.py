@@ -4,9 +4,12 @@ import math
 import random
 from pathlib import Path
 
+import yaml
+
 
 START_MARKER = "    <!-- BEGIN GENERATED OBSTACLES -->"
 END_MARKER = "    <!-- END GENERATED OBSTACLES -->"
+DEFAULT_GAP_HILLS = 50
 
 
 def fmt(value):
@@ -240,11 +243,11 @@ def generate_hill(
   for i in range(n_obstacles):
       position = random_position(
           x_range=[offset[0] + length_ramp_up + 1/6 * length_plane, offset[0] + length_ramp_up + 5/6*length_plane],
-          y_range=[offset[1] - 3/4*width_hill/2, offset[1] + 3/4*width_hill/2]
+          y_range=[offset[1] - 2/3*width_hill/2, offset[1] + 2/3*width_hill/2]
       )
       obstacles.append(
           box_xml(
-              name=f"obstacle_{i}_{hill_id}",
+              name=f"obstacle_hill_{hill_id}_{i}",
               x=position[0], y=position[1],
               yaw=random.uniform(0, 360),
               length=random.uniform(1, 7), width=random.uniform(1, 7),
@@ -256,49 +259,88 @@ def generate_hill(
   return obstacles
 
 
+def load_crete_params(params_path: Path) -> dict:
+    params = yaml.safe_load(params_path.read_text())
+    if params is None:
+        return {}
+    if not isinstance(params, dict):
+        raise ValueError(f"{params_path} must contain a YAML mapping")
+    return params
+
+
+def hill_id_from_config(hill_config: dict, index: int) -> int:
+    name = hill_config.get("name")
+    if isinstance(name, str):
+        suffix = name.rsplit("_", 1)[-1]
+        if suffix.isdigit():
+            return int(suffix)
+    return index
+
+
+def hill_length(hill_config: dict) -> float:
+    return (
+        hill_config["length_ramp_up"]
+        + hill_config["length_plane"]
+        + hill_config["length_ramp_down"]
+    )
+
+
+def generate_hill_from_config(hill_config: dict, hill_id: int, offset: tuple) -> list:
+    return generate_hill(
+        hill_id=hill_id,
+        offset=offset,
+        height_hill=hill_config.get("height"),
+        width_hill=hill_config.get("width"),
+        length_ramp_up=hill_config.get("length_ramp_up"),
+        length_plane=hill_config.get("length_plane"),
+        length_ramp_down=hill_config.get("length_ramp_down"),
+        n_obstacles=hill_config.get("n_obstacles"),
+    )
+
+
 def generate_obstacles():
+    params_path = Path(__file__).with_name("crete_params.yaml")
+    params = load_crete_params(params_path)
+    hills = params.get("hills", [])
+    if not isinstance(hills, list):
+        raise ValueError(f"{params_path} field 'hills' must be a list")
+
     obstacles = []
-    # hill 1
-    height_hill = 10
-    width_hill = 250
-    length_ramp_up = 10
-    length_plane = 30
-    length_ramp_down = 15
-    obstacles.extend(
-        generate_hill(
-          hill_id=1, offset=(5, 0),
-          height_hill=height_hill, width_hill=width_hill, length_ramp_up=length_ramp_up, length_plane=length_plane, length_ramp_down=length_ramp_down,
-          n_obstacles=10
-      )
-    )
+    offset_x = params.get("offset_x", 5)
+    offset_y = params.get("offset_y", 0)
+    gap_hills = params.get("gap_hills", DEFAULT_GAP_HILLS)
 
-    length_hill_1 = length_ramp_up + length_plane + length_ramp_down
-    gap_hills = 50
+    for index, hill_config in enumerate(hills, start=1):
+        if not isinstance(hill_config, dict):
+            raise ValueError(f"{params_path} hill entry {index} must be a mapping")
 
-    # hill 2
-    height_hill = 20
-    length_ramp_up = 20
-    length_plane = 40
-    length_ramp_down = 5
-    obstacles.extend(
-        generate_hill(
-            hill_id=2, offset=(length_hill_1 + gap_hills, 0),
-            height_hill=height_hill, width_hill=width_hill, length_ramp_up=length_ramp_up, length_plane=length_plane, length_ramp_down=length_ramp_down,
-            n_obstacles=10
-      )
-    )
+        offset = (offset_x, offset_y)
+        obstacles.extend(
+            generate_hill_from_config(
+                hill_config=hill_config,
+                hill_id=hill_id_from_config(hill_config, index),
+                offset=offset,
+            )
+        )
+        if index == 1:
+            offset_x = hill_length(hill_config) + gap_hills
+        else:
+            offset_x += hill_length(hill_config) + gap_hills
     
     # Building (between hills)
-    obstacles.append(
-        box_xml(
-            name="building",
-            x=length_hill_1 + gap_hills/2, y= -3/4*width_hill/2,
-            yaw=random.uniform(0, 90),
-            length=gap_hills/2, width=gap_hills/2,
-            height=random.uniform(30, 50),
-            color=get_random_color()
+    if hills:
+        length_hill_1 = hill_length(hills[0])
+        width_hill = hills[0].get("width")
+        obstacles.append(
+            box_xml(
+                name="building",
+                x=length_hill_1 + gap_hills/2, y= -3/4*width_hill/2,
+                yaw=random.uniform(0, 90),
+                length=gap_hills/2, width=gap_hills/2,
+                height=random.uniform(30, 50),
+                color=get_random_color()
+            )
         )
-    )
 
     return "\n\n".join(obstacles)
 

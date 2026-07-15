@@ -1,0 +1,19 @@
+offset_x: 5
+offset_y: 0
+gap_hills: 30
+hills:
+  - name: hill_1
+    length_ramp_up: 20
+    length_plane: 20
+    length_ramp_down: 15
+    height: 10
+    width: 100
+    n_obstacles: 6
+  - name: hill_2
+    length_ramp_up: 10
+    length_plane: 25
+    length_ramp_down: 5
+    height: 20
+    width: 100
+    n_obstacles: 7
+
