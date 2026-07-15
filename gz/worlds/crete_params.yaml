@@ -3,7 +3,7 @@ offset_y: 0
 gap_hills: 30
 hills:
   - name: hill_1
-    length_ramp_up: 20
+    length_ramp_up: 2
     length_plane: 20
     length_ramp_down: 15
     height: 10
