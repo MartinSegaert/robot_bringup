@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import Optional
 
 import rclpy
+from geometry_msgs.msg import TransformStamped
 from geometry_msgs.msg import Twist
 from mavros_msgs.msg import PositionTarget
 from mavros_msgs.msg import State
@@ -19,6 +20,7 @@ from mavros_msgs.srv import SetMode
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
+from tf2_ros import TransformBroadcaster
 
 
 _SENSOR_QOS = QoSProfile(
@@ -37,6 +39,9 @@ class Px4MavrosBridge(Node):
         self.declare_parameter('mavros_odom_topic', '/mavros/local_position/odom')
         self.declare_parameter('odom_output_topic', '/rmf/odom')
         self.declare_parameter('body_frame_id', 'rmf/base_link')
+        self.declare_parameter('tf_parent_frame_id', '')
+        self.declare_parameter('tf_child_frame_id', '')
+        self.declare_parameter('publish_tf', True)
         self.declare_parameter('setpoint_rate_hz', 20.0)
         self.declare_parameter('setpoint_timeout_s', 0.5)
         self.declare_parameter('auto_offboard', False)
@@ -48,6 +53,9 @@ class Px4MavrosBridge(Node):
         mavros_odom_topic = self.get_parameter('mavros_odom_topic').value
         odom_topic = self.get_parameter('odom_output_topic').value
         self._body_frame_id = self.get_parameter('body_frame_id').value
+        self._tf_parent_frame_id = self.get_parameter('tf_parent_frame_id').value
+        self._tf_child_frame_id = self.get_parameter('tf_child_frame_id').value
+        self._publish_tf = bool(self.get_parameter('publish_tf').value)
         rate_hz = float(self.get_parameter('setpoint_rate_hz').value)
         self._timeout_s = float(self.get_parameter('setpoint_timeout_s').value)
         self._auto_offboard = bool(self.get_parameter('auto_offboard').value)
@@ -63,6 +71,7 @@ class Px4MavrosBridge(Node):
 
         self._setpoint_pub = self.create_publisher(PositionTarget, setpoint_topic, 10)
         self._odom_pub = self.create_publisher(Odometry, odom_topic, 10)
+        self._tf_broadcaster = TransformBroadcaster(self) if self._publish_tf else None
         self.create_subscription(Twist, accel_topic, self._accel_callback, 10)
         self.create_subscription(Odometry, mavros_odom_topic, self._odom_callback, _SENSOR_QOS)
         self.create_subscription(State, '/mavros/state', self._state_callback, _SENSOR_QOS)
@@ -128,6 +137,30 @@ class Px4MavrosBridge(Node):
     def _odom_callback(self, odom: Odometry) -> None:
         self._has_odom = True
         self._odom_pub.publish(odom)
+        self._publish_odom_tf(odom)
+
+    def _publish_odom_tf(self, odom: Odometry) -> None:
+        if self._tf_broadcaster is None:
+            return
+
+        parent_frame = self._tf_parent_frame_id or odom.header.frame_id
+        child_frame = self._tf_child_frame_id or odom.child_frame_id
+        if not parent_frame or not child_frame:
+            self.get_logger().warning(
+                'Cannot publish odometry TF without parent and child frame ids',
+                throttle_duration_sec=5.0,
+            )
+            return
+
+        transform = TransformStamped()
+        transform.header.stamp = odom.header.stamp
+        transform.header.frame_id = parent_frame
+        transform.child_frame_id = child_frame
+        transform.transform.translation.x = odom.pose.pose.position.x
+        transform.transform.translation.y = odom.pose.pose.position.y
+        transform.transform.translation.z = odom.pose.pose.position.z
+        transform.transform.rotation = odom.pose.pose.orientation
+        self._tf_broadcaster.sendTransform(transform)
 
     def _state_callback(self, state: State) -> None:
         self._state = state
