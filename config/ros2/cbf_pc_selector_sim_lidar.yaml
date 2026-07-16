@@ -4,7 +4,7 @@ cbf_pc_selector:
         sensors:
             1:  # gz lidar
                 topic: /rmf/lidar/points
-                frame: rmf/base_link/lidar
+                frame: lidar_link
                 bins_w: 32
                 bins_h: 8
                 percentile: 10  # [%]

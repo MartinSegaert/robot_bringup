@@ -46,8 +46,8 @@ ros:
         joystick_lp_alpha: 0.9  # low-pass parameter for joystick cmd smoothing
     frames:
         world: map  # world frame in ROS TF
-        body: rmf  # body frame in ROS TF
-        sensor: rmf/base_link/lidar  # sensor frame in ROS TF
+        body: base_frame  # body frame in ROS TF
+        sensor: lidar_link  # sensor frame in ROS TF
 
 ## mpc parameters
 mpc:
