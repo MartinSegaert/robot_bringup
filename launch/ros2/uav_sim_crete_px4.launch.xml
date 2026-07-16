@@ -50,6 +50,12 @@
         <remap from="$(var lidar_gz_topic)" to="/rmf/lidar/points"/>
     </node>
 
+    <!-- point cloud to range image convertor -->
+    <node pkg="rmf_gz" exec="pc_to_range.py" name="pc_to_range" args="0 0 0 0 0 0 1 /map /$(var robot_name)/odom" output="screen">
+         <remap from="~/img_out" to="/rmf/lidar/range" />
+         <remap from="~/pc_in" to="/rmf/lidar/points" />
+    </node>
+
     <node pkg="robot_bringup" exec="pc_sparsify.py" name="pc_sparsify" output="screen">
         <param name="input_topic" value="/rmf/lidar/points"/>
         <param name="output_topic" value="/rmf/lidar/points_downsampled"/>

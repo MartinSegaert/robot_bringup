@@ -72,6 +72,16 @@ topics:
     queue_size: 10
     direction: ros2_to_ros1
 
+  - topic: /sdf_nmpc/viz/image_df
+    type: sensor_msgs/msg/Image
+    queue_size: 10
+    direction: ros2_to_ros1
+
+  - topic: /sdf_nmpc/viz/sdf_lvlset
+    type: sensor_msgs/msg/PointCloud2
+    queue_size: 10
+    direction: ros2_to_ros1
+
   - topic: /composite_cbf/input_viz
     type: geometry_msgs/msg/TwistStamped
     queue_size: 10

@@ -47,7 +47,7 @@ class Px4MavrosBridge(Node):
         self.declare_parameter('lidar_parent_frame_id', 'base_link')
         self.declare_parameter('lidar_child_frame_id', 'lidar_link')
         self.declare_parameter('lidar_z_offset_m', 0.1)
-        self.declare_parameter('setpoint_rate_hz', 20.0)
+        self.declare_parameter('setpoint_rate_hz', 50.0)
         self.declare_parameter('setpoint_timeout_s', 0.5)
         self.declare_parameter('auto_offboard', False)
         self.declare_parameter('auto_arm', False)
