@@ -42,6 +42,11 @@ class Px4MavrosBridge(Node):
         self.declare_parameter('tf_parent_frame_id', '')
         self.declare_parameter('tf_child_frame_id', '')
         self.declare_parameter('publish_tf', True)
+        self.declare_parameter('stamp_tf_with_ros_time', True)
+        self.declare_parameter('publish_lidar_tf', True)
+        self.declare_parameter('lidar_parent_frame_id', 'base_link')
+        self.declare_parameter('lidar_child_frame_id', 'lidar_link')
+        self.declare_parameter('lidar_z_offset_m', 0.1)
         self.declare_parameter('setpoint_rate_hz', 20.0)
         self.declare_parameter('setpoint_timeout_s', 0.5)
         self.declare_parameter('auto_offboard', False)
@@ -56,6 +61,11 @@ class Px4MavrosBridge(Node):
         self._tf_parent_frame_id = self.get_parameter('tf_parent_frame_id').value
         self._tf_child_frame_id = self.get_parameter('tf_child_frame_id').value
         self._publish_tf = bool(self.get_parameter('publish_tf').value)
+        self._stamp_tf_with_ros_time = bool(self.get_parameter('stamp_tf_with_ros_time').value)
+        self._publish_lidar_tf = bool(self.get_parameter('publish_lidar_tf').value)
+        self._lidar_parent_frame_id = self.get_parameter('lidar_parent_frame_id').value
+        self._lidar_child_frame_id = self.get_parameter('lidar_child_frame_id').value
+        self._lidar_z_offset_m = float(self.get_parameter('lidar_z_offset_m').value)
         rate_hz = float(self.get_parameter('setpoint_rate_hz').value)
         self._timeout_s = float(self.get_parameter('setpoint_timeout_s').value)
         self._auto_offboard = bool(self.get_parameter('auto_offboard').value)
@@ -153,7 +163,11 @@ class Px4MavrosBridge(Node):
             return
 
         transform = TransformStamped()
-        transform.header.stamp = odom.header.stamp
+        transform.header.stamp = (
+            self.get_clock().now().to_msg()
+            if self._stamp_tf_with_ros_time
+            else odom.header.stamp
+        )
         transform.header.frame_id = parent_frame
         transform.child_frame_id = child_frame
         transform.transform.translation.x = odom.pose.pose.position.x
@@ -161,6 +175,15 @@ class Px4MavrosBridge(Node):
         transform.transform.translation.z = odom.pose.pose.position.z
         transform.transform.rotation = odom.pose.pose.orientation
         self._tf_broadcaster.sendTransform(transform)
+
+        if self._publish_lidar_tf:
+            lidar_transform = TransformStamped()
+            lidar_transform.header.stamp = transform.header.stamp
+            lidar_transform.header.frame_id = self._lidar_parent_frame_id
+            lidar_transform.child_frame_id = self._lidar_child_frame_id
+            lidar_transform.transform.translation.z = self._lidar_z_offset_m
+            lidar_transform.transform.rotation.w = 1.0
+            self._tf_broadcaster.sendTransform(lidar_transform)
 
     def _state_callback(self, state: State) -> None:
         self._state = state
