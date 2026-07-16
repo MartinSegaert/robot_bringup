@@ -13,6 +13,9 @@ from typing import Optional
 import rclpy
 from geometry_msgs.msg import Twist
 from mavros_msgs.msg import PositionTarget
+from mavros_msgs.msg import State
+from mavros_msgs.srv import CommandBool
+from mavros_msgs.srv import SetMode
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
@@ -36,6 +39,9 @@ class Px4MavrosBridge(Node):
         self.declare_parameter('body_frame_id', 'rmf/base_link')
         self.declare_parameter('setpoint_rate_hz', 20.0)
         self.declare_parameter('setpoint_timeout_s', 0.5)
+        self.declare_parameter('auto_offboard', False)
+        self.declare_parameter('auto_arm', False)
+        self.declare_parameter('mode_request_period_s', 2.0)
 
         accel_topic = self.get_parameter('accel_input_topic').value
         setpoint_topic = self.get_parameter('setpoint_output_topic').value
@@ -44,19 +50,33 @@ class Px4MavrosBridge(Node):
         self._body_frame_id = self.get_parameter('body_frame_id').value
         rate_hz = float(self.get_parameter('setpoint_rate_hz').value)
         self._timeout_s = float(self.get_parameter('setpoint_timeout_s').value)
+        self._auto_offboard = bool(self.get_parameter('auto_offboard').value)
+        self._auto_arm = bool(self.get_parameter('auto_arm').value)
+        self._mode_request_period_s = float(self.get_parameter('mode_request_period_s').value)
 
         if rate_hz <= 2.0:
             raise ValueError('setpoint_rate_hz must be greater than PX4\'s 2 Hz offboard minimum')
         if self._timeout_s <= 0.0:
             raise ValueError('setpoint_timeout_s must be positive')
+        if self._mode_request_period_s <= 0.0:
+            raise ValueError('mode_request_period_s must be positive')
 
         self._setpoint_pub = self.create_publisher(PositionTarget, setpoint_topic, 10)
         self._odom_pub = self.create_publisher(Odometry, odom_topic, 10)
         self.create_subscription(Twist, accel_topic, self._accel_callback, 10)
         self.create_subscription(Odometry, mavros_odom_topic, self._odom_callback, _SENSOR_QOS)
+        self.create_subscription(State, '/mavros/state', self._state_callback, _SENSOR_QOS)
+
+        self._set_mode_client = self.create_client(SetMode, '/mavros/set_mode')
+        self._arming_client = self.create_client(CommandBool, '/mavros/cmd/arming')
 
         self._last_setpoint: Optional[PositionTarget] = None
         self._last_command_ns: Optional[int] = None
+        self._state = State()
+        self._has_odom = False
+        self._last_mode_request_ns = 0
+        self._mode_request_pending = False
+        self._arm_request_pending = False
         self._timed_out = False
         self.create_timer(1.0 / rate_hz, self._publish_setpoint)
 
@@ -103,9 +123,72 @@ class Px4MavrosBridge(Node):
 
         self._last_setpoint.header.stamp = now.to_msg()
         self._setpoint_pub.publish(self._last_setpoint)
+        self._request_offboard_and_arm(now.nanoseconds)
 
     def _odom_callback(self, odom: Odometry) -> None:
+        self._has_odom = True
         self._odom_pub.publish(odom)
+
+    def _state_callback(self, state: State) -> None:
+        self._state = state
+
+    def _request_offboard_and_arm(self, now_ns: int) -> None:
+        if not self._has_odom or not self._state.connected:
+            return
+
+        elapsed_s = (now_ns - self._last_mode_request_ns) * 1e-9
+        if elapsed_s < self._mode_request_period_s:
+            return
+
+        requested = False
+        if (
+            self._auto_offboard
+            and self._state.mode != 'OFFBOARD'
+            and not self._mode_request_pending
+            and self._set_mode_client.service_is_ready()
+        ):
+            request = SetMode.Request()
+            request.custom_mode = 'OFFBOARD'
+            future = self._set_mode_client.call_async(request)
+            future.add_done_callback(self._mode_request_done)
+            self._mode_request_pending = True
+            requested = True
+
+        if (
+            self._auto_arm
+            and not self._state.armed
+            and not self._arm_request_pending
+            and self._arming_client.service_is_ready()
+        ):
+            request = CommandBool.Request()
+            request.value = True
+            future = self._arming_client.call_async(request)
+            future.add_done_callback(self._arm_request_done)
+            self._arm_request_pending = True
+            requested = True
+
+        if requested:
+            self._last_mode_request_ns = now_ns
+
+    def _mode_request_done(self, future) -> None:
+        self._mode_request_pending = False
+        try:
+            response = future.result()
+        except Exception as exc:  # noqa: BLE001 - ROS client exceptions include transport details.
+            self.get_logger().warning(f'OFFBOARD mode request failed: {exc}')
+            return
+        if not response.mode_sent:
+            self.get_logger().warning('OFFBOARD mode request was rejected')
+
+    def _arm_request_done(self, future) -> None:
+        self._arm_request_pending = False
+        try:
+            response = future.result()
+        except Exception as exc:  # noqa: BLE001 - ROS client exceptions include transport details.
+            self.get_logger().warning(f'Arming request failed: {exc}')
+            return
+        if not response.success:
+            self.get_logger().warning('Arming request was rejected')
 
 
 def main(args=None) -> None:
