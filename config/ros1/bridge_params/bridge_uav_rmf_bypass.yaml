@@ -1,0 +1,37 @@
+topics:
+  # GBPlanner commands and stop events: ROS 1 -> ROS 2 path follower.
+  - topic: /gbplanner_path
+    type: nav_msgs/msg/Path
+    queue_size: 10
+    direction: ros1_to_ros2
+
+  - topic: /planner_control_interface/stop_request
+    type: std_msgs/msg/Bool
+    queue_size: 10
+    direction: ros1_to_ros2
+
+  # PX4 state and lidar: ROS 2 -> ROS 1 planner.
+  - topic: /rmf/odom
+    type: nav_msgs/msg/Odometry
+    queue_size: 10
+    direction: ros2_to_ros1
+
+  - topic: /rmf/lidar/points_downsampled
+    type: sensor_msgs/msg/PointCloud2
+    queue_size: 10
+    direction: ros2_to_ros1
+
+  - topic: /tf
+    type: tf2_msgs/msg/TFMessage
+    queue_size: 10
+    direction: ros2_to_ros1
+
+  - topic: /tf_static
+    type: tf2_msgs/msg/TFMessage
+    queue_size: 10
+    direction: ros2_to_ros1
+
+  - topic: /clock
+    type: rosgraph_msgs/msg/Clock
+    queue_size: 10
+    direction: ros2_to_ros1
