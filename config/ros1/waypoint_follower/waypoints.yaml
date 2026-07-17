@@ -4,31 +4,16 @@ retry_delay: 2.0
 max_retries: 0
 waypoints:
   - name: waypoint_1
-    x: 54.5
-    y: 0.0
-    z: 3.0
+    x: 23.5
+    y: -37.5
+    z: 13.0
     yaw_deg: 0.0
   - name: waypoint_2
     x: 87.0
-    y: 37.5
+    y: -37.5
     z: 23.0
     yaw_deg: 0.0
   - name: waypoint_3
-    x: 87.0
-    y: -37.5
-    z: 23.0
-    yaw_deg: -90.0
-  - name: waypoint_4
-    x: 23.5
-    y: -37.5
-    z: 13.0
-    yaw_deg: 180.0
-  - name: waypoint_5
-    x: 23.5
-    y: 37.5
-    z: 13.0
-    yaw_deg: 90.0
-  - name: waypoint_6
     x: 0.0
     y: 0.0
     z: 3.0

@@ -256,11 +256,11 @@ PlanningParams:
   line_check_method: 1
 
   add_only_frontiers_to_global_graph: false
-  target_navigation_allow_unknown: true
+  target_navigation_reaching_radius: 2.0
+  target_navigation_target_graph_radius: 5.0
   target_navigation_lookahead_distance: 10.0
   target_navigation_traverse_length_max: 12.0
-  target_navigation_min_progress: 0.5
-  target_navigation_global_distance_weight: 0.1
+  target_navigation_max_no_progress_iters: 5
 
   # small comp
   min_coverage_percentage: 0.9

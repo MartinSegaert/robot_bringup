@@ -277,11 +277,11 @@ PlanningParams:
   add_only_frontiers_to_global_graph: true
 
   local_navigation_reaching_radius: 3.0
-  target_navigation_allow_unknown: false
+  target_navigation_reaching_radius: 3.0
+  target_navigation_target_graph_radius: 5.0
   target_navigation_lookahead_distance: 8.0
   target_navigation_traverse_length_max: 8.0
-  target_navigation_min_progress: 0.5
-  target_navigation_global_distance_weight: 0.1
+  target_navigation_max_no_progress_iters: 5
   active_homing_update_radius: 7.0
 
   min_coverage_percentage: 0.9

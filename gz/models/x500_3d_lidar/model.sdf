@@ -52,12 +52,12 @@
             <vertical>
               <samples>30</samples>
               <resolution>1.000000</resolution>
-              <min_angle>-0.100000</min_angle>
+              <min_angle>-0.300000</min_angle>
               <max_angle>0.5000000</max_angle>
             </vertical>
           </scan>
           <range>
-            <min>0.12000</min>
+            <min>0.3000</min>
             <max>50</max>
             <resolution>0.015000</resolution>
           </range>
