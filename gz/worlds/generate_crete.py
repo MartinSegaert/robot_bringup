@@ -343,17 +343,17 @@ def generate_obstacles():
             )
         )
 
-    # extra ceil
-    obstacles.append(
-        box_xml(
-            name="ceil",
-            x=0, y= 0, z = 10,
-            yaw=0,
-            length=20, width=10,
-            height=1,
-            color=get_random_color()
-        )
-    )
+    # # extra ceil
+    # obstacles.append(
+    #     box_xml(
+    #         name="ceil",
+    #         x=0, y= 0, z = 10,
+    #         yaw=0,
+    #         length=20, width=10,
+    #         height=1,
+    #         color=get_random_color()
+    #     )
+    # )
 
     return "\n\n".join(obstacles)
 

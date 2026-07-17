@@ -32,8 +32,8 @@ interpolate_traj: true
 trajectory_lead_time: 0.0
 
 init_motion:
-  z_takeoff: 1.2
-  z_drop: 0.5
+  z_takeoff: 3.0
+  z_drop: 0.3
   x_forward: 1.75
 
 # Keep PCI's path interpolation model aligned with the follower defaults.
