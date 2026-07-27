@@ -6,7 +6,7 @@ waypoints:
   - name: waypoint_1
     x: 77.5
     y: 0.0
-    z: 3.0
+    z: 10.0
     yaw_deg: 0.0
   - name: waypoint_2
     x: 110.0
@@ -31,5 +31,5 @@ waypoints:
   - name: waypoint_6
     x: 0.0
     y: 0.0
-    z: 3.0
+    z: 10.0
     yaw_deg: 0.0
