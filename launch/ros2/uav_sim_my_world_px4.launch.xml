@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+    <!--
+      World-only launch for PX4 SITL.
+
+      PX4 spawns the x500 after this Gazebo server becomes ready. In
+      particular, this launch must not spawn rmf or bridge Gazebo acceleration
+      commands / ground-truth odometry, because PX4 owns the vehicle actuation
+      and state-estimation path.
+    -->
+    <set_parameter name="use_sim_time" value="true"/>
+
+    <arg name="verbosity" default="4"/>
+    <arg name="world" default="my_world"/>
+    <arg name="world_name" default="map"/>
+    <arg name="robot_name" default="x500_3d_lidar_0"/>
+    <arg name="headless" default="false"/>
+    <arg
+        name="lidar_gz_topic"
+        default="/scan/points"/>
+    <let name="headless_string" value="-s --headless-rendering" if="$(var headless)"/>
+    <let name="headless_string" value="" unless="$(var headless)"/>
+
+    <!--
+      The PX4 process sends an SDF include referring to its source-tree model.
+      Gazebo resolves nested includes (notably x500_base), so the PX4 model
+      directory must also be visible in this server container.
+    -->
+    <set_env
+        name="GZ_SIM_RESOURCE_PATH"
+        value="/workspace/src/robot_bringup/gz:/repo/workspaces/PX4/Tools/simulation/gz/models:$(find-pkg-share robot_bringup)/gz:$(find-pkg-share subt_cave_sim):$(find-pkg-share subt_cave_sim)/models:$(find-pkg-share rmf_gz)/resources/"/>
+
+    <include file="$(find-pkg-share ros_gz_sim)/launch/gz_sim.launch.py">
+        <arg name="gz_args" value="-r $(var headless_string) -v $(var verbosity) worlds/$(var world).sdf"/>
+    </include>
+
+    <!-- ROS consumers still need the Gazebo simulation clock. -->
+    <node
+        pkg="ros_gz_bridge"
+        exec="parameter_bridge"
+        name="ros_gz_bridge_clock"
+        args="/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock"/>
+
+    <node
+        pkg="ros_gz_bridge"
+        exec="parameter_bridge"
+        name="ros_gz_bridge_lidar"
+        args="$(var lidar_gz_topic)@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked">
+        <remap from="$(var lidar_gz_topic)" to="/rmf/lidar/points"/>
+    </node>
+
+    <!-- point cloud to range image convertor -->
+    <node pkg="rmf_gz" exec="pc_to_range.py" name="pc_to_range" args="0 0 0 0 0 0 1 /map /$(var robot_name)/odom" output="screen">
+         <remap from="~/img_out" to="/rmf/lidar/range" />
+         <remap from="~/pc_in" to="/rmf/lidar/points" />
+    </node>
+
+    <node pkg="robot_bringup" exec="pc_sparsify.py" name="pc_sparsify" output="screen">
+        <param name="input_topic" value="/rmf/lidar/points"/>
+        <param name="output_topic" value="/rmf/lidar/points_downsampled"/>
+    </node>
+
+</launch>
