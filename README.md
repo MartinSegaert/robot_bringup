@@ -28,7 +28,14 @@ roslaunch robot_bringup waypoint_follower.launch
 rosservice call /waypoint_follower/start "{}"
 ```
 
-The follower sends each pose through `/pci_to_waypoint`. A `true` message on
-`/gbplanner_status` advances the mission; a terminal `false` retries according
-to `max_retries` and then stops. Do not run another PCI planning behavior at the
-same time because `gbplanner_status` is a shared planner-status topic.
+The follower switches GBPlanner to waypoint mode and publishes each pose to
+`/move_base_simple/goal`. This only loads the first target: it does not start
+PCI or command the vehicle directly. Use the **Start Planner** button after
+launching the follower to begin target-reach planning and motion.
+
+The next target is published when `/rmf/odom` is within `reached_distance`
+(2 m by default) of the current target. This matches GBPlanner's configured
+`local_navigation_reaching_radius`. After the operator's first planner start
+has produced a real `/gbplanner_path`, the follower may re-trigger PCI between
+targets so that one explicit planner start runs the complete sequence. It will
+never trigger the initial planner start itself.

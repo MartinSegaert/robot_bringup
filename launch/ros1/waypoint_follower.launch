@@ -2,8 +2,14 @@
   <arg name="waypoint_file"
        default="$(find robot_bringup)/config/ros1/waypoint_follower/waypoints.yaml" />
   <arg name="autostart" default="false" />
-  <arg name="waypoint_service" default="/pci_to_waypoint" />
-  <arg name="status_topic" default="/gbplanner_status" />
+  <arg name="goal_topic" default="/move_base_simple/goal" />
+  <arg name="odometry_topic" default="/rmf/odom" />
+  <arg name="operation_mode_service"
+       default="/gbplanner/switch_operation_mode" />
+  <arg name="planner_path_topic" default="/gbplanner_path" />
+  <arg name="planner_start_service"
+       default="/planner_control_interface/std_srvs/automatic_planning" />
+  <arg name="reached_distance" default="2.0" />
 
   <node pkg="robot_bringup"
         type="waypoint_follower.py"
@@ -11,7 +17,13 @@
         output="screen">
     <rosparam command="load" file="$(arg waypoint_file)" />
     <param name="autostart" value="$(arg autostart)" />
-    <param name="waypoint_service" value="$(arg waypoint_service)" />
-    <param name="status_topic" value="$(arg status_topic)" />
+    <param name="goal_topic" value="$(arg goal_topic)" />
+    <param name="odometry_topic" value="$(arg odometry_topic)" />
+    <param name="operation_mode_service"
+           value="$(arg operation_mode_service)" />
+    <param name="planner_path_topic" value="$(arg planner_path_topic)" />
+    <param name="planner_start_service"
+           value="$(arg planner_start_service)" />
+    <param name="reached_distance" value="$(arg reached_distance)" />
   </node>
 </launch>

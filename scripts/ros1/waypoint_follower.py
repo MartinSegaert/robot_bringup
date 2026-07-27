@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
-"""Send a configured sequence of waypoints to GBPlanner PCI."""
+"""Send a configured sequence of target-reach goals to GBPlanner."""
 
 import math
 
 import rospy
-from planner_msgs.srv import pci_to_waypoint, pci_to_waypointRequest
-from std_msgs.msg import Bool
+from geometry_msgs.msg import PoseStamped
+from nav_msgs.msg import Odometry
+from nav_msgs.msg import Path
+from std_srvs.srv import SetBool
 from std_srvs.srv import Trigger, TriggerResponse
 
 
@@ -17,45 +19,70 @@ class WaypointFollower:
         self.inter_waypoint_delay = max(
             0.0, float(rospy.get_param("~inter_waypoint_delay", 0.5))
         )
-        self.retry_delay = max(
-            0.0, float(rospy.get_param("~retry_delay", 2.0))
+        self.reached_distance = float(
+            rospy.get_param("~reached_distance", 2.0)
         )
-        self.max_retries = max(0, int(rospy.get_param("~max_retries", 0)))
-        self.waypoint_service_name = rospy.get_param(
-            "~waypoint_service", "/pci_to_waypoint"
+        if self.reached_distance <= 0.0:
+            raise ValueError("~reached_distance must be positive")
+        self.goal_topic = rospy.get_param(
+            "~goal_topic", "/move_base_simple/goal"
         )
-        self.status_topic = rospy.get_param(
-            "~status_topic", "/gbplanner_status"
+        self.odometry_topic = rospy.get_param(
+            "~odometry_topic", "/rmf/odom"
+        )
+        self.operation_mode_service_name = rospy.get_param(
+            "~operation_mode_service", "/gbplanner/switch_operation_mode"
+        )
+        self.planner_path_topic = rospy.get_param(
+            "~planner_path_topic", "/gbplanner_path"
+        )
+        self.planner_start_service_name = rospy.get_param(
+            "~planner_start_service",
+            "/planner_control_interface/std_srvs/automatic_planning",
         )
 
         self.index = 0
-        self.retry_count = 0
         self.running = False
-        self.waiting_for_result = False
+        self.waiting_for_reach = False
+        self.planner_started = False
         self.send_pending = False
         self.send_timer = None
+        self.restart_timer = None
+        self.position = None
 
-        self.status_subscriber = rospy.Subscriber(
-            self.status_topic, Bool, self._status_callback, queue_size=10
+        self.goal_publisher = rospy.Publisher(
+            self.goal_topic, PoseStamped, queue_size=1, latch=True
+        )
+        self.odometry_subscriber = rospy.Subscriber(
+            self.odometry_topic, Odometry, self._odometry_callback, queue_size=1
+        )
+        self.path_subscriber = rospy.Subscriber(
+            self.planner_path_topic, Path, self._path_callback, queue_size=1
         )
         self.start_server = rospy.Service("~start", Trigger, self._start_callback)
 
         rospy.loginfo(
-            "Waypoint follower: waiting for service %s", self.waypoint_service_name
+            "Waypoint follower: waiting for GBPlanner mode service %s",
+            self.operation_mode_service_name,
         )
-        rospy.wait_for_service(self.waypoint_service_name)
-        self.send_waypoint = rospy.ServiceProxy(
-            self.waypoint_service_name, pci_to_waypoint, persistent=False
+        rospy.wait_for_service(self.operation_mode_service_name)
+        self.set_operation_mode = rospy.ServiceProxy(
+            self.operation_mode_service_name, SetBool, persistent=False
+        )
+        self.start_planner = rospy.ServiceProxy(
+            self.planner_start_service_name, Trigger, persistent=False
         )
 
         rospy.loginfo(
-            "Waypoint follower ready with %d waypoint(s); start service is %s/start",
+            "Waypoint follower ready with %d waypoint(s); publishing GBPlanner "
+            "goals on %s; start service is %s/start",
             len(self.waypoints),
+            self.goal_topic,
             rospy.get_name(),
         )
         if rospy.get_param("~autostart", False):
-            self._schedule_send(0.5)
-            self.running = True
+            if self._start_mission():
+                self._schedule_send(0.5)
 
     @staticmethod
     def _number(value, field, waypoint_index):
@@ -140,16 +167,43 @@ class WaypointFollower:
         return waypoints
 
     def _start_callback(self, _request):
-        if self.running or self.waiting_for_result or self.send_pending:
+        if self.running or self.waiting_for_reach or self.send_pending:
             return TriggerResponse(success=False, message="mission is already running")
 
         if self.index >= len(self.waypoints):
             self.index = 0
-            self.retry_count = 0
 
-        self.running = True
+        if not self._start_mission():
+            return TriggerResponse(
+                success=False, message="could not switch GBPlanner to waypoint mode"
+            )
+
         self._schedule_send(0.0)
-        return TriggerResponse(success=True, message="waypoint mission started")
+        return TriggerResponse(
+            success=True,
+            message="waypoint mission loaded; use Start Planner to begin motion",
+        )
+
+    def _start_mission(self):
+        try:
+            response = self.set_operation_mode(True)
+        except rospy.ServiceException as error:
+            rospy.logerr("Could not switch GBPlanner to waypoint mode: %s", error)
+            return False
+        if not response.success:
+            rospy.logerr(
+                "GBPlanner rejected waypoint mode: %s", response.message
+            )
+            return False
+
+        # Every new mission requires a fresh operator Start Planner action.
+        self.planner_started = False
+        self.running = True
+        rospy.loginfo(
+            "GBPlanner waypoint mode enabled. The target will be loaded without "
+            "starting PCI; use the Start Planner button to begin motion."
+        )
+        return True
 
     def _schedule_send(self, delay):
         if rospy.is_shutdown():
@@ -170,30 +224,28 @@ class WaypointFollower:
             return
 
         waypoint = self.waypoints[self.index]
-        request = pci_to_waypointRequest()
-        request.header.stamp = rospy.Time.now()
-        request.header.frame_id = self.frame_id
-        request.waypoint.position.x = waypoint["x"]
-        request.waypoint.position.y = waypoint["y"]
-        request.waypoint.position.z = waypoint["z"]
-        request.waypoint.orientation.x = waypoint["qx"]
-        request.waypoint.orientation.y = waypoint["qy"]
-        request.waypoint.orientation.z = waypoint["qz"]
-        request.waypoint.orientation.w = waypoint["qw"]
+        goal = PoseStamped()
+        goal.header.stamp = rospy.Time.now()
+        goal.header.frame_id = self.frame_id
+        goal.pose.position.x = waypoint["x"]
+        goal.pose.position.y = waypoint["y"]
+        goal.pose.position.z = waypoint["z"]
+        goal.pose.orientation.x = waypoint["qx"]
+        goal.pose.orientation.y = waypoint["qy"]
+        goal.pose.orientation.z = waypoint["qz"]
+        goal.pose.orientation.w = waypoint["qw"]
 
-        # Set this before the service call so an immediately reached target is
-        # not missed while the synchronous call is returning.
-        self.waiting_for_result = True
-        try:
-            self.send_waypoint(request)
-        except rospy.ServiceException as error:
-            self.waiting_for_result = False
-            self.running = False
-            rospy.logerr("Could not send %s: %s", waypoint["name"], error)
-            return
-
+        self.waiting_for_reach = True
+        self.goal_publisher.publish(goal)
+        if self.index > 0 and self.planner_started:
+            # The target-reach tree can reset PCI when the previous goal is
+            # completed. Re-trigger only after a real planner path proves that
+            # the operator already pressed Start Planner for this mission.
+            self.restart_timer = rospy.Timer(
+                rospy.Duration(0.25), self._restart_planner, oneshot=True
+            )
         rospy.loginfo(
-            "Sent waypoint %d/%d '%s': (%.2f, %.2f, %.2f)",
+            "Loaded GBPlanner target %d/%d '%s': (%.2f, %.2f, %.2f)",
             self.index + 1,
             len(self.waypoints),
             waypoint["name"],
@@ -202,42 +254,52 @@ class WaypointFollower:
             waypoint["z"],
         )
 
-    def _status_callback(self, message):
-        if not self.running or not self.waiting_for_result:
+    def _path_callback(self, message):
+        if self.running and message.poses:
+            self.planner_started = True
+
+    def _restart_planner(self, _event):
+        if not self.running or rospy.is_shutdown():
+            return
+        try:
+            response = self.start_planner()
+        except rospy.ServiceException as error:
+            rospy.logerr(
+                "Could not continue planning to the next waypoint: %s. "
+                "Use the Start Planner button to resume.",
+                error,
+            )
+            return
+        if not response.success:
+            rospy.logerr(
+                "PCI rejected continuation to the next waypoint: %s. "
+                "Use the Start Planner button to resume.",
+                response.message,
+            )
+
+    def _odometry_callback(self, message):
+        self.position = message.pose.pose.position
+        if not self.running or not self.waiting_for_reach:
             return
 
-        self.waiting_for_result = False
         waypoint = self.waypoints[self.index]
-        if message.data:
-            rospy.loginfo(
-                "Reached waypoint %d/%d '%s'",
-                self.index + 1,
-                len(self.waypoints),
-                waypoint["name"],
-            )
-            self.index += 1
-            self.retry_count = 0
-            self._schedule_send(self.inter_waypoint_delay)
+        dx = self.position.x - waypoint["x"]
+        dy = self.position.y - waypoint["y"]
+        dz = self.position.z - waypoint["z"]
+        distance = math.sqrt(dx * dx + dy * dy + dz * dz)
+        if distance > self.reached_distance:
             return
 
-        if self.retry_count < self.max_retries:
-            self.retry_count += 1
-            rospy.logwarn(
-                "Waypoint '%s' failed; scheduling retry %d/%d",
-                waypoint["name"],
-                self.retry_count,
-                self.max_retries,
-            )
-            self._schedule_send(self.retry_delay)
-            return
-
-        self.running = False
-        rospy.logerr(
-            "Waypoint mission stopped: planner failed at waypoint %d/%d '%s'",
+        self.waiting_for_reach = False
+        rospy.loginfo(
+            "Reached waypoint %d/%d '%s' (distance %.2f m)",
             self.index + 1,
             len(self.waypoints),
             waypoint["name"],
+            distance,
         )
+        self.index += 1
+        self._schedule_send(self.inter_waypoint_delay)
 
 
 def main():
