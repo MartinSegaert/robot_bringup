@@ -17,7 +17,7 @@ Panels:
         - /PlannerViz1/PlanningGraph1/Namespaces1
         - /PlannerViz1/Sampler1/Namespaces1
         - /PlannerViz1/ShortestPathsClustering1/Namespaces1
-        - /PlannerViz1/LocalNavGoal1
+        - /Sensors1
         - /Sensors1/VLP1/Autocompute Value Bounds1
         - /Control1/CBF1
       Splitter Ratio: 0.6911764740943909
@@ -176,8 +176,7 @@ Visualization Manager:
           Marker Topic: /vis/best_planning_paths
           Name: BestPaths
           Namespaces:
-            best_path: true
-            vertices: true
+            {}
           Queue Size: 100
           Value: true
         - Class: rviz/MarkerArray
@@ -193,10 +192,7 @@ Visualization Manager:
           Marker Topic: /vis/robot_state
           Name: RobotState
           Namespaces:
-            extension: true
-            extension_aligned: true
-            heading: true
-            size: true
+            {}
           Queue Size: 100
           Value: true
         - Class: rviz/MarkerArray
@@ -208,16 +204,13 @@ Visualization Manager:
           Queue Size: 100
           Value: false
         - Class: rviz/MarkerArray
-          Enabled: true
+          Enabled: false
           Marker Topic: /vis/planning_global_graph
           Name: GlobalGraph
           Namespaces:
-            edges: true
-            frontier: true
-            gain: true
-            vertices: true
+            {}
           Queue Size: 100
-          Value: true
+          Value: false
         - Class: rviz/MarkerArray
           Enabled: false
           Marker Topic: /vis/planning_homing_path
@@ -247,8 +240,7 @@ Visualization Manager:
           Marker Topic: /vis/ref_path
           Name: RefPath
           Namespaces:
-            ref_path: true
-            vertices: true
+            {}
           Queue Size: 100
           Value: true
         - Class: rviz/MarkerArray
@@ -296,7 +288,7 @@ Visualization Manager:
           Marker Topic: /gbplanner/go_to_waypoint_pose_visualization
           Name: GoToWaypointVis
           Namespaces:
-            "": true
+            {}
           Queue Size: 100
           Value: true
         - Alpha: 1
@@ -386,8 +378,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 0.2249666452407837
-            Min Value: -0.39046573638916016
+            Max Value: 13.635417938232422
+            Min Value: -0.16642606258392334
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -395,7 +387,7 @@ Visualization Manager:
           Color: 255; 255; 255
           Color Transformer: AxisColor
           Decay Time: 0
-          Enabled: true
+          Enabled: false
           Invert Rainbow: false
           Max Color: 255; 255; 255
           Min Color: 0; 0; 0
@@ -410,7 +402,7 @@ Visualization Manager:
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
-          Value: true
+          Value: false
       Enabled: true
       Name: Sensors
     - Class: rviz/Group
@@ -461,8 +453,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 2.8500001430511475
-            Min Value: -0.15000009536743164
+            Max Value: 4.200000286102295
+            Min Value: -0.19999980926513672
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -776,7 +768,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 166.4391632080078
+      Distance: 212.8555450439453
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -784,17 +776,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 39.982906341552734
-        Y: 31.638185501098633
-        Z: -13.387550354003906
+        X: 34.682926177978516
+        Y: 31.954618453979492
+        Z: -14.820541381835938
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.45979642868042
+      Pitch: 0.44479629397392273
       Target Frame: rmf
-      Yaw: 4.505420207977295
+      Yaw: 4.0404133796691895
     Saved: ~
 Window Geometry:
   Displays:

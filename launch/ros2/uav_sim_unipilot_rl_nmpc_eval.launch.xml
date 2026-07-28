@@ -63,6 +63,11 @@
     <node pkg="robot_bringup" exec="pc_sparsify.py" name="pc_sparsify" output="screen">
         <param name="input_topic" value="/$(var robot_name)/lidar/points"/>
         <param name="output_topic" value="/$(var robot_name)/lidar/points_downsampled"/>
+        <param name="allow_clear" value="true"/>
+        <param name="max_ray_length_m" value="20.0"/>
+        <param name="clearing_ray_margin_m" value="0.1"/>
+        <param name="vertical_min_angle" value="0.0"/>
+        <param name="vertical_max_angle" value="1.5708"/>
     </node>
 
     <!-- topics -->

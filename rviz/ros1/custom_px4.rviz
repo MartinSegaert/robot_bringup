@@ -176,8 +176,7 @@ Visualization Manager:
           Marker Topic: /vis/best_planning_paths
           Name: BestPaths
           Namespaces:
-            best_path: true
-            vertices: true
+            {}
           Queue Size: 100
           Value: true
         - Class: rviz/MarkerArray
@@ -193,10 +192,7 @@ Visualization Manager:
           Marker Topic: /vis/robot_state
           Name: RobotState
           Namespaces:
-            extension: true
-            extension_aligned: true
-            heading: true
-            size: true
+            {}
           Queue Size: 100
           Value: true
         - Class: rviz/MarkerArray
@@ -220,7 +216,7 @@ Visualization Manager:
           Marker Topic: /vis/planning_homing_path
           Name: HomingPath
           Namespaces:
-            best_path: true
+            {}
           Queue Size: 100
           Value: true
         - Class: rviz/MarkerArray
@@ -244,8 +240,7 @@ Visualization Manager:
           Marker Topic: /vis/ref_path
           Name: RefPath
           Namespaces:
-            ref_path: true
-            vertices: true
+            {}
           Queue Size: 100
           Value: true
         - Class: rviz/MarkerArray
@@ -293,7 +288,7 @@ Visualization Manager:
           Marker Topic: /gbplanner/go_to_waypoint_pose_visualization
           Name: GoToWaypointVis
           Namespaces:
-            "": true
+            {}
           Queue Size: 100
           Value: true
         - Alpha: 1
@@ -383,8 +378,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 10.72954273223877
-            Min Value: -0.33451879024505615
+            Max Value: 13.014578819274902
+            Min Value: -0.4088515043258667
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -392,7 +387,7 @@ Visualization Manager:
           Color: 255; 255; 255
           Color Transformer: AxisColor
           Decay Time: 0
-          Enabled: true
+          Enabled: false
           Invert Rainbow: false
           Max Color: 255; 255; 255
           Min Color: 0; 0; 0
@@ -407,7 +402,7 @@ Visualization Manager:
           Unreliable: false
           Use Fixed Frame: true
           Use rainbow: true
-          Value: true
+          Value: false
       Enabled: true
       Name: Sensors
     - Class: rviz/Group
@@ -458,7 +453,7 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 9.800000190734863
+            Max Value: 3.799999952316284
             Min Value: -0.5999999046325684
             Value: true
           Axis: Z
@@ -817,7 +812,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 55.98334503173828
+      Distance: 62.70134735107422
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -825,17 +820,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -1.0109200477600098
-        Y: 19.741065979003906
-        Z: 6.667594909667969
+        X: 12.610891342163086
+        Y: 12.18592643737793
+        Z: -1.0666667222976685
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7297970652580261
+      Pitch: 0.5097968578338623
       Target Frame: rmf
-      Yaw: 4.165409564971924
+      Yaw: 4.225405693054199
     Saved: ~
 Window Geometry:
   Displays:

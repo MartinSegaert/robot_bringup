@@ -108,8 +108,8 @@
             </polyline>
           </geometry>
           <material>
-            <ambient>0.001 0.33 0.785 1</ambient>
-            <diffuse>0.001 0.33 0.785 1</diffuse>
+            <ambient>0.012 0.073 0.786 1</ambient>
+            <diffuse>0.012 0.073 0.786 1</diffuse>
           </material>
         </visual>
       </link>
@@ -133,8 +133,8 @@
             </box>
           </geometry>
           <material>
-            <ambient>0.632 0.252 0.507 1</ambient>
-            <diffuse>0.632 0.252 0.507 1</diffuse>
+            <ambient>0.002 0.499 0.586 1</ambient>
+            <diffuse>0.002 0.499 0.586 1</diffuse>
           </material>
         </visual>
       </link>
@@ -164,8 +164,8 @@
             </polyline>
           </geometry>
           <material>
-            <ambient>0.194 0.212 0.912 1</ambient>
-            <diffuse>0.194 0.212 0.912 1</diffuse>
+            <ambient>0.249 0.664 0.893 1</ambient>
+            <diffuse>0.249 0.664 0.893 1</diffuse>
           </material>
         </visual>
       </link>
@@ -173,24 +173,24 @@
 
     <model name="obstacle_hill_1_0">
       <static>true</static>
-      <pose>45.461 9.911 4.916 0 0 253.043</pose>
+      <pose>39.441 -16.669 4.702 0 0 232.46</pose>
       <link name="link">
         <collision name="collision">
           <geometry>
             <box>
-              <size>2.515 5.717 9.832</size>
+              <size>2.985 6.075 9.403</size>
             </box>
           </geometry>
         </collision>
         <visual name="visual">
           <geometry>
             <box>
-              <size>2.515 5.717 9.832</size>
+              <size>2.985 6.075 9.403</size>
             </box>
           </geometry>
           <material>
-            <ambient>0.081 0.783 0.015 1</ambient>
-            <diffuse>0.081 0.783 0.015 1</diffuse>
+            <ambient>0.497 0.857 0.648 1</ambient>
+            <diffuse>0.497 0.857 0.648 1</diffuse>
           </material>
         </visual>
       </link>
@@ -198,24 +198,24 @@
 
     <model name="obstacle_hill_1_1">
       <static>true</static>
-      <pose>42.978 -7.283 6.873 0 0 134.348</pose>
+      <pose>42.154 10.905 4.839 0 0 100.204</pose>
       <link name="link">
         <collision name="collision">
           <geometry>
             <box>
-              <size>2.763 6.683 13.746</size>
+              <size>6.383 4.726 9.677</size>
             </box>
           </geometry>
         </collision>
         <visual name="visual">
           <geometry>
             <box>
-              <size>2.763 6.683 13.746</size>
+              <size>6.383 4.726 9.677</size>
             </box>
           </geometry>
           <material>
-            <ambient>0.081 0.783 0.015 1</ambient>
-            <diffuse>0.081 0.783 0.015 1</diffuse>
+            <ambient>0.497 0.857 0.648 1</ambient>
+            <diffuse>0.497 0.857 0.648 1</diffuse>
           </material>
         </visual>
       </link>
@@ -223,24 +223,24 @@
 
     <model name="obstacle_hill_1_2">
       <static>true</static>
-      <pose>46.561 3.524 5.955 0 0 109.898</pose>
+      <pose>36.314 -24.666 6.973 0 0 284.524</pose>
       <link name="link">
         <collision name="collision">
           <geometry>
             <box>
-              <size>3.931 4.145 11.91</size>
+              <size>3.896 6.861 13.946</size>
             </box>
           </geometry>
         </collision>
         <visual name="visual">
           <geometry>
             <box>
-              <size>3.931 4.145 11.91</size>
+              <size>3.896 6.861 13.946</size>
             </box>
           </geometry>
           <material>
-            <ambient>0.081 0.783 0.015 1</ambient>
-            <diffuse>0.081 0.783 0.015 1</diffuse>
+            <ambient>0.497 0.857 0.648 1</ambient>
+            <diffuse>0.497 0.857 0.648 1</diffuse>
           </material>
         </visual>
       </link>
@@ -248,24 +248,24 @@
 
     <model name="obstacle_hill_1_3">
       <static>true</static>
-      <pose>44.373 -0.406 4.421 0 0 300.051</pose>
+      <pose>36.149 1.777 4.239 0 0 302.068</pose>
       <link name="link">
         <collision name="collision">
           <geometry>
             <box>
-              <size>6.84 1.878 8.842</size>
+              <size>3.251 1.013 8.477</size>
             </box>
           </geometry>
         </collision>
         <visual name="visual">
           <geometry>
             <box>
-              <size>6.84 1.878 8.842</size>
+              <size>3.251 1.013 8.477</size>
             </box>
           </geometry>
           <material>
-            <ambient>0.081 0.783 0.015 1</ambient>
-            <diffuse>0.081 0.783 0.015 1</diffuse>
+            <ambient>0.497 0.857 0.648 1</ambient>
+            <diffuse>0.497 0.857 0.648 1</diffuse>
           </material>
         </visual>
       </link>
@@ -273,24 +273,24 @@
 
     <model name="obstacle_hill_1_4">
       <static>true</static>
-      <pose>40.852 19.506 4.732 0 0 187.511</pose>
+      <pose>37.499 25.321 5.985 0 0 303.866</pose>
       <link name="link">
         <collision name="collision">
           <geometry>
             <box>
-              <size>2.208 2.772 9.464</size>
+              <size>3.092 2.515 11.969</size>
             </box>
           </geometry>
         </collision>
         <visual name="visual">
           <geometry>
             <box>
-              <size>2.208 2.772 9.464</size>
+              <size>3.092 2.515 11.969</size>
             </box>
           </geometry>
           <material>
-            <ambient>0.081 0.783 0.015 1</ambient>
-            <diffuse>0.081 0.783 0.015 1</diffuse>
+            <ambient>0.497 0.857 0.648 1</ambient>
+            <diffuse>0.497 0.857 0.648 1</diffuse>
           </material>
         </visual>
       </link>
@@ -298,24 +298,24 @@
 
     <model name="obstacle_hill_1_5">
       <static>true</static>
-      <pose>40.325 12.688 5.909 0 0 136.277</pose>
+      <pose>34.067 28.826 6.383 0 0 106.368</pose>
       <link name="link">
         <collision name="collision">
           <geometry>
             <box>
-              <size>2.298 5.507 11.817</size>
+              <size>3.528 1.463 12.766</size>
             </box>
           </geometry>
         </collision>
         <visual name="visual">
           <geometry>
             <box>
-              <size>2.298 5.507 11.817</size>
+              <size>3.528 1.463 12.766</size>
             </box>
           </geometry>
           <material>
-            <ambient>0.081 0.783 0.015 1</ambient>
-            <diffuse>0.081 0.783 0.015 1</diffuse>
+            <ambient>0.497 0.857 0.648 1</ambient>
+            <diffuse>0.497 0.857 0.648 1</diffuse>
           </material>
         </visual>
       </link>
@@ -331,7 +331,7 @@
               <height>100</height>
               <point>0 0</point>
               <point>10 0</point>
-              <point>10 15</point>
+              <point>10 2</point>
             </polyline>
           </geometry>
         </collision>
@@ -341,12 +341,12 @@
               <height>100</height>
               <point>0 0</point>
               <point>10 0</point>
-              <point>10 15</point>
+              <point>10 2</point>
             </polyline>
           </geometry>
           <material>
-            <ambient>0.01 0.077 0.24 1</ambient>
-            <diffuse>0.01 0.077 0.24 1</diffuse>
+            <ambient>0.838 0.025 0.498 1</ambient>
+            <diffuse>0.838 0.025 0.498 1</diffuse>
           </material>
         </visual>
       </link>
@@ -354,24 +354,24 @@
 
     <model name="plane_2">
       <static>true</static>
-      <pose>112.5 0 7.5 0 0 0</pose>
+      <pose>112.5 0 1 0 0 0</pose>
       <link name="link">
         <collision name="collision">
           <geometry>
             <box>
-              <size>25 100 15</size>
+              <size>25 100 2</size>
             </box>
           </geometry>
         </collision>
         <visual name="visual">
           <geometry>
             <box>
-              <size>25 100 15</size>
+              <size>25 100 2</size>
             </box>
           </geometry>
           <material>
-            <ambient>0.672 0.462 0.816 1</ambient>
-            <diffuse>0.672 0.462 0.816 1</diffuse>
+            <ambient>0.644 0.276 0.852 1</ambient>
+            <diffuse>0.644 0.276 0.852 1</diffuse>
           </material>
         </visual>
       </link>
@@ -387,7 +387,7 @@
               <height>100</height>
               <point>0 0</point>
               <point>5 0</point>
-              <point>5 15</point>
+              <point>5 2</point>
             </polyline>
           </geometry>
         </collision>
@@ -397,12 +397,12 @@
               <height>100</height>
               <point>0 0</point>
               <point>5 0</point>
-              <point>5 15</point>
+              <point>5 2</point>
             </polyline>
           </geometry>
           <material>
-            <ambient>0.112 0.801 0.87 1</ambient>
-            <diffuse>0.112 0.801 0.87 1</diffuse>
+            <ambient>0.337 0.013 0.318 1</ambient>
+            <diffuse>0.337 0.013 0.318 1</diffuse>
           </material>
         </visual>
       </link>
@@ -410,24 +410,24 @@
 
     <model name="obstacle_hill_2_0">
       <static>true</static>
-      <pose>104.494 -10.034 9.166 0 0 279.01</pose>
+      <pose>107.698 14.174 2.022 0 0 242.722</pose>
       <link name="link">
         <collision name="collision">
           <geometry>
             <box>
-              <size>4.337 1.881 18.333</size>
+              <size>5.363 1.694 4.044</size>
             </box>
           </geometry>
         </collision>
         <visual name="visual">
           <geometry>
             <box>
-              <size>4.337 1.881 18.333</size>
+              <size>5.363 1.694 4.044</size>
             </box>
           </geometry>
           <material>
-            <ambient>0.851 0.382 0.827 1</ambient>
-            <diffuse>0.851 0.382 0.827 1</diffuse>
+            <ambient>0.858 0.861 0.033 1</ambient>
+            <diffuse>0.858 0.861 0.033 1</diffuse>
           </material>
         </visual>
       </link>
@@ -435,24 +435,24 @@
 
     <model name="obstacle_hill_2_1">
       <static>true</static>
-      <pose>117.674 -26.748 8.554 0 0 22.632</pose>
+      <pose>104.804 -29.624 3.79 0 0 47.732</pose>
       <link name="link">
         <collision name="collision">
           <geometry>
             <box>
-              <size>2.598 1.557 17.108</size>
+              <size>3.994 6.801 7.58</size>
             </box>
           </geometry>
         </collision>
         <visual name="visual">
           <geometry>
             <box>
-              <size>2.598 1.557 17.108</size>
+              <size>3.994 6.801 7.58</size>
             </box>
           </geometry>
           <material>
-            <ambient>0.851 0.382 0.827 1</ambient>
-            <diffuse>0.851 0.382 0.827 1</diffuse>
+            <ambient>0.858 0.861 0.033 1</ambient>
+            <diffuse>0.858 0.861 0.033 1</diffuse>
           </material>
         </visual>
       </link>
@@ -460,24 +460,24 @@
 
     <model name="obstacle_hill_2_2">
       <static>true</static>
-      <pose>109.81 12.22 9.296 0 0 26.938</pose>
+      <pose>116.785 16.103 4.168 0 0 345.86</pose>
       <link name="link">
         <collision name="collision">
           <geometry>
             <box>
-              <size>5.65 5.572 18.593</size>
+              <size>4.241 6.089 8.336</size>
             </box>
           </geometry>
         </collision>
         <visual name="visual">
           <geometry>
             <box>
-              <size>5.65 5.572 18.593</size>
+              <size>4.241 6.089 8.336</size>
             </box>
           </geometry>
           <material>
-            <ambient>0.851 0.382 0.827 1</ambient>
-            <diffuse>0.851 0.382 0.827 1</diffuse>
+            <ambient>0.858 0.861 0.033 1</ambient>
+            <diffuse>0.858 0.861 0.033 1</diffuse>
           </material>
         </visual>
       </link>
@@ -485,24 +485,24 @@
 
     <model name="obstacle_hill_2_3">
       <static>true</static>
-      <pose>106.595 -0.936 9.335 0 0 213.17</pose>
+      <pose>115.755 -29.965 2.709 0 0 161.94</pose>
       <link name="link">
         <collision name="collision">
           <geometry>
             <box>
-              <size>2.901 5.424 18.669</size>
+              <size>6.832 4.117 5.418</size>
             </box>
           </geometry>
         </collision>
         <visual name="visual">
           <geometry>
             <box>
-              <size>2.901 5.424 18.669</size>
+              <size>6.832 4.117 5.418</size>
             </box>
           </geometry>
           <material>
-            <ambient>0.851 0.382 0.827 1</ambient>
-            <diffuse>0.851 0.382 0.827 1</diffuse>
+            <ambient>0.858 0.861 0.033 1</ambient>
+            <diffuse>0.858 0.861 0.033 1</diffuse>
           </material>
         </visual>
       </link>
@@ -510,24 +510,24 @@
 
     <model name="obstacle_hill_2_4">
       <static>true</static>
-      <pose>104.498 -4.87 8.873 0 0 58.436</pose>
+      <pose>112.253 1.561 1.964 0 0 79.242</pose>
       <link name="link">
         <collision name="collision">
           <geometry>
             <box>
-              <size>6.181 5.487 17.745</size>
+              <size>6.041 1.456 3.928</size>
             </box>
           </geometry>
         </collision>
         <visual name="visual">
           <geometry>
             <box>
-              <size>6.181 5.487 17.745</size>
+              <size>6.041 1.456 3.928</size>
             </box>
           </geometry>
           <material>
-            <ambient>0.851 0.382 0.827 1</ambient>
-            <diffuse>0.851 0.382 0.827 1</diffuse>
+            <ambient>0.858 0.861 0.033 1</ambient>
+            <diffuse>0.858 0.861 0.033 1</diffuse>
           </material>
         </visual>
       </link>
@@ -535,24 +535,24 @@
 
     <model name="obstacle_hill_2_5">
       <static>true</static>
-      <pose>108.229 25.595 10.818 0 0 292.245</pose>
+      <pose>110.583 -3.388 4.442 0 0 228.025</pose>
       <link name="link">
         <collision name="collision">
           <geometry>
             <box>
-              <size>3.292 3.687 21.636</size>
+              <size>6.511 4.498 8.884</size>
             </box>
           </geometry>
         </collision>
         <visual name="visual">
           <geometry>
             <box>
-              <size>3.292 3.687 21.636</size>
+              <size>6.511 4.498 8.884</size>
             </box>
           </geometry>
           <material>
-            <ambient>0.851 0.382 0.827 1</ambient>
-            <diffuse>0.851 0.382 0.827 1</diffuse>
+            <ambient>0.858 0.861 0.033 1</ambient>
+            <diffuse>0.858 0.861 0.033 1</diffuse>
           </material>
         </visual>
       </link>
@@ -560,24 +560,24 @@
 
     <model name="obstacle_hill_2_6">
       <static>true</static>
-      <pose>113.964 24.069 10.086 0 0 343.799</pose>
+      <pose>108.926 14.493 2.448 0 0 211.181</pose>
       <link name="link">
         <collision name="collision">
           <geometry>
             <box>
-              <size>3.719 6.947 20.173</size>
+              <size>5.101 1.908 4.896</size>
             </box>
           </geometry>
         </collision>
         <visual name="visual">
           <geometry>
             <box>
-              <size>3.719 6.947 20.173</size>
+              <size>5.101 1.908 4.896</size>
             </box>
           </geometry>
           <material>
-            <ambient>0.851 0.382 0.827 1</ambient>
-            <diffuse>0.851 0.382 0.827 1</diffuse>
+            <ambient>0.858 0.861 0.033 1</ambient>
+            <diffuse>0.858 0.861 0.033 1</diffuse>
           </material>
         </visual>
       </link>
@@ -585,24 +585,24 @@
 
     <model name="building">
       <static>true</static>
-      <pose>75 -37.5 15.124 0 0 49.391</pose>
+      <pose>75 -37.5 24.441 0 0 76.404</pose>
       <link name="link">
         <collision name="collision">
           <geometry>
             <box>
-              <size>15 15 30.248</size>
+              <size>15 15 48.882</size>
             </box>
           </geometry>
         </collision>
         <visual name="visual">
           <geometry>
             <box>
-              <size>15 15 30.248</size>
+              <size>15 15 48.882</size>
             </box>
           </geometry>
           <material>
-            <ambient>0.903 0.898 0.017 1</ambient>
-            <diffuse>0.903 0.898 0.017 1</diffuse>
+            <ambient>0.463 0.63 0.626 1</ambient>
+            <diffuse>0.463 0.63 0.626 1</diffuse>
           </material>
         </visual>
       </link>

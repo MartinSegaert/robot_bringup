@@ -20,7 +20,7 @@ RobotParams:
 #             all follows ROS convention (X-forward, Y-left, Z-Up).
 #-------------------------------------------------------------------------------
 SensorParams:
-  sensor_list:      ["OS064", "Cam"]
+  sensor_list:      ["OS064"]
   OS064:
     type:           kLidar
     max_range:      15
@@ -29,37 +29,7 @@ SensorParams:
     fov:            [rad(2*pi), rad(90*pi/180)]
     resolution:     [rad(10.0*pi/180), rad(10.0*pi/180)]
     frontier_percentage_threshold: 0.1 # 0.005
-  CamF:
-    type:           kLidar
-    max_range:      3.5
-    center_offset:  [0.0, 0.0, 0.0]
-    rotations:      [0.0, 0.0, 0.0]
-    fov:            [rad(100*pi/180), rad(60*pi/180)]
-    resolution:     [rad(4.0*pi/180), rad(4.0*pi/180)]
-    frontier_percentage_threshold: 0.01
-  Cam:
-    type:           kLidar
-    CameraType:     kRotating
-    rot_lims:       [-1.57, 1.57]
-    max_range:      2.5
-    min_range:      0.25
-    center_offset:  [0.0, 0.0, 0.0]
-    rotations:      [0.0, 0.0, 0.0]
-    fov:            [rad(120*pi/180.0), rad(80*pi/180.0)]
-    resolution:     [rad(5*pi/180), rad(5*pi/180)]
-    frontier_percentage_threshold: 0.06
 
-CameraAnnotationParams:
-  sensor_list:      ["Cam"]
-  Cam:
-    type:           kLidar
-    rot_lims:       [-1.57, 1.57]
-    max_range:      3.0
-    center_offset:  [0.0, 0.0, 0.0]
-    rotations:      [0.0, 0.0, 0.0]
-    fov:            [rad(84*pi/180.0), rad(64*pi/180.0)]
-    resolution:     [rad(2.0*pi/180), rad(2.0*pi/180)]
-    frontier_percentage_threshold: 0.01
 #-------------------------------------------------------------------------------
 # SAMPLING SPACE CONFIGURATION
 #   Global: Strictly defined bounds for the whole environment.

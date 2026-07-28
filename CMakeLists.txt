@@ -77,8 +77,15 @@ else()
     )
 
     file(GLOB PY_SCRIPTS scripts/ros2/*.py)
+    list(REMOVE_ITEM PY_SCRIPTS
+        "${CMAKE_CURRENT_SOURCE_DIR}/scripts/ros2/pointcloud_clearing.py"
+    )
     install(PROGRAMS
         ${PY_SCRIPTS}
+        DESTINATION lib/${PROJECT_NAME}
+    )
+    install(FILES
+        scripts/ros2/pointcloud_clearing.py
         DESTINATION lib/${PROJECT_NAME}
     )
 
