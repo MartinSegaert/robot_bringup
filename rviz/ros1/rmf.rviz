@@ -208,21 +208,24 @@ Visualization Manager:
           Queue Size: 100
           Value: false
         - Class: rviz/MarkerArray
-          Enabled: false
+          Enabled: true
           Marker Topic: /vis/planning_global_graph
           Name: GlobalGraph
+          Namespaces:
+            edges: true
+            frontier: true
+            gain: true
+            vertices: true
+          Queue Size: 100
+          Value: true
+        - Class: rviz/MarkerArray
+          Enabled: false
+          Marker Topic: /vis/planning_homing_path
+          Name: HomingPath
           Namespaces:
             {}
           Queue Size: 100
           Value: false
-        - Class: rviz/MarkerArray
-          Enabled: true
-          Marker Topic: /vis/planning_homing_path
-          Name: HomingPath
-          Namespaces:
-            best_path: true
-          Queue Size: 100
-          Value: true
         - Class: rviz/MarkerArray
           Enabled: false
           Marker Topic: /vis/planning_graph
@@ -383,8 +386,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 11.14698314666748
-            Min Value: -0.27157652378082275
+            Max Value: 0.2249666452407837
+            Min Value: -0.39046573638916016
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -773,7 +776,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 71.79010009765625
+      Distance: 166.4391632080078
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -781,17 +784,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -0.2808278203010559
-        Y: 0.17103801667690277
-        Z: 2.4457080364227295
+        X: 39.982906341552734
+        Y: 31.638185501098633
+        Z: -13.387550354003906
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8003968000411987
+      Pitch: 1.45979642868042
       Target Frame: rmf
-      Yaw: 4.485410690307617
+      Yaw: 4.505420207977295
     Saved: ~
 Window Geometry:
   Displays:

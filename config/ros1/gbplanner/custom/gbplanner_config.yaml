@@ -68,7 +68,7 @@ CameraAnnotationParams:
 BoundedSpaceParams:
   Global:
     type:           kCuboid
-    min_val:        [-1.0, -1000.0, -1000.0]
+    min_val:        [-1000.0, -1000.0, -1000.0]
     max_val:        [1000.0, 1000.0, 1000.0]
   Local:
     type:           kCuboid
