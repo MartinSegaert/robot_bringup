@@ -13,7 +13,7 @@ hills:
     length_ramp_up: 10
     length_plane: 25
     length_ramp_down: 5
-    height: 2
+    height: 15
     width: 100
     n_obstacles: 7
 

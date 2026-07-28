@@ -39,7 +39,7 @@ Panels:
   - Class: rviz/Time
     Name: Time
     SyncMode: 0
-    SyncSource: VLP
+    SyncSource: SurfacePCL
   - Class: gbplanner_ui/GbPlanner Control
     Name: GbPlanner Control
   - Class: rmf_ui/RMF Control
@@ -212,13 +212,13 @@ Visualization Manager:
           Queue Size: 100
           Value: false
         - Class: rviz/MarkerArray
-          Enabled: true
+          Enabled: false
           Marker Topic: /vis/planning_homing_path
           Name: HomingPath
           Namespaces:
             {}
           Queue Size: 100
-          Value: true
+          Value: false
         - Class: rviz/MarkerArray
           Enabled: false
           Marker Topic: /vis/planning_graph
@@ -453,7 +453,7 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 3.799999952316284
+            Max Value: 2.6000001430511475
             Min Value: -0.5999999046325684
             Value: true
           Axis: Z
