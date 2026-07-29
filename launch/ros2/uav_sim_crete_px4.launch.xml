@@ -14,7 +14,7 @@
     <arg name="verbosity" default="4"/>
     <arg name="world" default="crete"/>
     <arg name="world_name" default="map"/>
-    <arg name="robot_name" default="x500_3d_lidar_0"/>
+    <arg name="robot_name" default="x500_3d_lidar_1"/>
     <arg name="headless" default="false"/>
     <arg
         name="lidar_gz_topic"
