@@ -43,6 +43,17 @@ class PointCloudDownsampler(Node):
             raise ValueError('max_ray_length_m must be positive')
         if self.clearing_ray_margin_m <= 0.0:
             raise ValueError('clearing_ray_margin_m must be positive')
+        if self.horizontal_min_angle >= self.horizontal_max_angle:
+            raise ValueError(
+                'horizontal_min_angle must be less than horizontal_max_angle'
+            )
+        if not (
+            -np.pi / 2 <= self.vertical_min_angle
+            < self.vertical_max_angle <= np.pi / 2
+        ):
+            raise ValueError(
+                'vertical angles must be ordered and within [-pi/2, pi/2]'
+            )
 
         # Subscriber and Publisher
         self.sub = self.create_subscription(
@@ -62,6 +73,12 @@ class PointCloudDownsampler(Node):
         self.get_logger().info(
             f'Non-return clearing: {self.allow_clear}, endpoint distance: '
             f'{self.max_ray_length_m + self.clearing_ray_margin_m:.2f} m'
+        )
+        self.get_logger().info(
+            'Clearing-ray FOV [rad]: '
+            f'azimuth [{self.horizontal_min_angle:.3f}, '
+            f'{self.horizontal_max_angle:.3f}], elevation '
+            f'[{self.vertical_min_angle:.3f}, {self.vertical_max_angle:.3f}]'
         )
 
     def pointcloud_callback(self, msg):

@@ -1,6 +1,6 @@
 cbf_pc_selector:
     ros__parameters:
-        frame_body: rmf/base_link
+        frame_body: base_link
         sensors:
             1:  # gz lidar
                 topic: /rmf/lidar/points

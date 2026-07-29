@@ -19,6 +19,16 @@
     <arg
         name="lidar_gz_topic"
         default="/scan/points"/>
+    <!--
+      Non-return points contain no usable direction, so pc_sparsify rebuilds
+      it from the organized cloud index and these exact sensor scan limits.
+      Keep these arguments synchronized with the selected model's lidar SDF.
+      The defaults describe x500_3d_lidar_1 and x500_3d_lidar_4.
+    -->
+    <arg name="lidar_horizontal_min_angle" default="0.0"/>
+    <arg name="lidar_horizontal_max_angle" default="6.28"/>
+    <arg name="lidar_vertical_min_angle" default="-0.3"/>
+    <arg name="lidar_vertical_max_angle" default="1.5"/>
     <let name="headless_string" value="-s --headless-rendering" if="$(var headless)"/>
     <let name="headless_string" value="" unless="$(var headless)"/>
 
@@ -62,10 +72,10 @@
         <param name="allow_clear" value="true"/>
         <param name="max_ray_length_m" value="20.0"/>
         <param name="clearing_ray_margin_m" value="0.1"/>
-        <param name="horizontal_min_angle" value="0.0"/>
-        <param name="horizontal_max_angle" value="6.28"/>
-        <param name="vertical_min_angle" value="-0.3"/>
-        <param name="vertical_max_angle" value="1.5"/>
+        <param name="horizontal_min_angle" value="$(var lidar_horizontal_min_angle)"/>
+        <param name="horizontal_max_angle" value="$(var lidar_horizontal_max_angle)"/>
+        <param name="vertical_min_angle" value="$(var lidar_vertical_min_angle)"/>
+        <param name="vertical_max_angle" value="$(var lidar_vertical_max_angle)"/>
     </node>
 
 </launch>
