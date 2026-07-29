@@ -210,6 +210,7 @@ PlanningParams:
   limit_vertices_to_surface: false
   min_occ_surface: -10.0
 
+  frontier_factor_factor: 0.0   # double between 0 and 1 for frontier selection for target reach in unkown space : minimize  cost = path_len + dist + frontier_factor_factor * (dist² / (path_len + dist))
   local_navigation_reaching_radius: 2.0
   
   max_exploration_iterations: 3
