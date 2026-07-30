@@ -8,7 +8,10 @@ offboard command stream instead of flying indefinitely on a stale command.
 
 from __future__ import annotations
 
+import math
+from pathlib import Path
 from typing import Optional
+import xml.etree.ElementTree as ET
 
 import rclpy
 from geometry_msgs.msg import TransformStamped
@@ -30,6 +33,102 @@ _SENSOR_QOS = QoSProfile(
 )
 
 
+def _quaternion_from_rpy(
+    roll: float, pitch: float, yaw: float
+) -> tuple[float, float, float, float]:
+    """Return an xyzw quaternion for fixed-axis roll, pitch, and yaw."""
+    cr = math.cos(roll * 0.5)
+    sr = math.sin(roll * 0.5)
+    cp = math.cos(pitch * 0.5)
+    sp = math.sin(pitch * 0.5)
+    cy = math.cos(yaw * 0.5)
+    sy = math.sin(yaw * 0.5)
+    return (
+        sr * cp * cy - cr * sp * sy,
+        cr * sp * cy + sr * cp * sy,
+        cr * cp * sy - sr * sp * cy,
+        cr * cp * cy + sr * sp * sy,
+    )
+
+
+def _load_fixed_joint_pose(
+    sdf_path: str, parent_link: str, child_link: str
+) -> tuple[tuple[float, float, float], tuple[float, float, float, float]]:
+    """Load parent-to-child xyz and xyzw from a fixed joint in an SDF file."""
+    path = Path(sdf_path).expanduser()
+    try:
+        root = ET.parse(path).getroot()
+    except (OSError, ET.ParseError) as error:
+        raise ValueError(f'Cannot read LiDAR model SDF {path}: {error}') from error
+
+    matching_joints = []
+    for joint in root.iter('joint'):
+        parent = (joint.findtext('parent') or '').strip()
+        child = (joint.findtext('child') or '').strip()
+        if parent == parent_link and child == child_link:
+            matching_joints.append(joint)
+
+    if not matching_joints:
+        raise ValueError(
+            f'No joint from {parent_link!r} to {child_link!r} found in {path}'
+        )
+    if len(matching_joints) > 1:
+        raise ValueError(
+            f'Multiple joints from {parent_link!r} to {child_link!r} found in {path}'
+        )
+
+    joint = matching_joints[0]
+    if joint.get('type') != 'fixed':
+        raise ValueError(
+            f'LiDAR joint {joint.get("name", "<unnamed>")!r} in {path} '
+            'must be fixed'
+        )
+
+    pose = joint.find('pose')
+    if pose is None or not (pose.text or '').strip():
+        values = [0.0] * 6
+        rotation_format = 'euler_rpy'
+    else:
+        relative_to = (pose.get('relative_to') or parent_link).strip()
+        if relative_to != parent_link:
+            raise ValueError(
+                f'LiDAR joint pose in {path} is relative to {relative_to!r}; '
+                f'expected {parent_link!r}'
+            )
+        rotation_format = pose.get('rotation_format', 'euler_rpy')
+        try:
+            values = [float(value) for value in pose.text.split()]
+        except ValueError as error:
+            raise ValueError(f'Invalid LiDAR joint pose in {path}') from error
+
+    translation = tuple(values[:3])
+    if rotation_format == 'euler_rpy':
+        if len(values) != 6:
+            raise ValueError(
+                f'LiDAR joint pose in {path} must contain 6 values for euler_rpy'
+            )
+        roll, pitch, yaw = values[3:]
+        if pose is not None and pose.get('degrees', 'false').lower() == 'true':
+            roll, pitch, yaw = map(math.radians, (roll, pitch, yaw))
+        rotation = _quaternion_from_rpy(roll, pitch, yaw)
+    elif rotation_format == 'quat_xyzw':
+        if len(values) != 7:
+            raise ValueError(
+                f'LiDAR joint pose in {path} must contain 7 values for quat_xyzw'
+            )
+        rotation = tuple(values[3:])
+        norm = math.sqrt(sum(component * component for component in rotation))
+        if norm == 0.0:
+            raise ValueError(f'LiDAR joint quaternion in {path} has zero norm')
+        rotation = tuple(component / norm for component in rotation)
+    else:
+        raise ValueError(
+            f'Unsupported LiDAR pose rotation_format {rotation_format!r} in {path}'
+        )
+
+    return translation, rotation
+
+
 class Px4MavrosBridge(Node):
     def __init__(self) -> None:
         super().__init__('px4_mavros_bridge')
@@ -46,6 +145,7 @@ class Px4MavrosBridge(Node):
         self.declare_parameter('publish_lidar_tf', True)
         self.declare_parameter('lidar_parent_frame_id', 'base_link')
         self.declare_parameter('lidar_child_frame_id', 'lidar_link')
+        self.declare_parameter('lidar_model_sdf_path', '')
         self.declare_parameter('lidar_z_offset_m', 0.1)
         self.declare_parameter('setpoint_rate_hz', 50.0)
         self.declare_parameter('setpoint_timeout_s', 0.5)
@@ -65,7 +165,18 @@ class Px4MavrosBridge(Node):
         self._publish_lidar_tf = bool(self.get_parameter('publish_lidar_tf').value)
         self._lidar_parent_frame_id = self.get_parameter('lidar_parent_frame_id').value
         self._lidar_child_frame_id = self.get_parameter('lidar_child_frame_id').value
+        lidar_model_sdf_path = self.get_parameter('lidar_model_sdf_path').value
         self._lidar_z_offset_m = float(self.get_parameter('lidar_z_offset_m').value)
+        self._lidar_translation = (0.0, 0.0, self._lidar_z_offset_m)
+        self._lidar_rotation = (0.0, 0.0, 0.0, 1.0)
+        self._lidar_pose_source = 'lidar_z_offset_m fallback'
+        if lidar_model_sdf_path:
+            self._lidar_translation, self._lidar_rotation = _load_fixed_joint_pose(
+                lidar_model_sdf_path,
+                self._lidar_parent_frame_id,
+                self._lidar_child_frame_id,
+            )
+            self._lidar_pose_source = lidar_model_sdf_path
         rate_hz = float(self.get_parameter('setpoint_rate_hz').value)
         self._timeout_s = float(self.get_parameter('setpoint_timeout_s').value)
         self._auto_offboard = bool(self.get_parameter('auto_offboard').value)
@@ -102,6 +213,11 @@ class Px4MavrosBridge(Node):
         self.get_logger().info(
             f'Acceleration {accel_topic} -> {setpoint_topic}; '
             f'odometry {mavros_odom_topic} -> {odom_topic}'
+        )
+        self.get_logger().info(
+            f'LiDAR TF {self._lidar_parent_frame_id} -> '
+            f'{self._lidar_child_frame_id}: xyz={self._lidar_translation}, '
+            f'xyzw={self._lidar_rotation} (source: {self._lidar_pose_source})'
         )
 
     def _accel_callback(self, command: Twist) -> None:
@@ -181,8 +297,17 @@ class Px4MavrosBridge(Node):
             lidar_transform.header.stamp = transform.header.stamp
             lidar_transform.header.frame_id = self._lidar_parent_frame_id
             lidar_transform.child_frame_id = self._lidar_child_frame_id
-            lidar_transform.transform.translation.z = self._lidar_z_offset_m
-            lidar_transform.transform.rotation.w = 1.0
+            (
+                lidar_transform.transform.translation.x,
+                lidar_transform.transform.translation.y,
+                lidar_transform.transform.translation.z,
+            ) = self._lidar_translation
+            (
+                lidar_transform.transform.rotation.x,
+                lidar_transform.transform.rotation.y,
+                lidar_transform.transform.rotation.z,
+                lidar_transform.transform.rotation.w,
+            ) = self._lidar_rotation
             self._tf_broadcaster.sendTransform(lidar_transform)
 
     def _state_callback(self, state: State) -> None:

@@ -122,8 +122,8 @@ robot:
 ## sensor
 sensor:
     hfov: 3.1415
-    vfov: 0.7854
-    aspect_ratio: 4
+    vfov: 1.57
+    aspect_ratio: 2
     dmax: 5
     shape_imgs: [1, 128, 512]
     is_depth: False

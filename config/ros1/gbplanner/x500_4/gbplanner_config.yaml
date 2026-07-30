@@ -24,8 +24,8 @@ SensorParams:
   OS064:
     type:           kLidar
     max_range:      15
-    center_offset:  [0.0, 0.0, 0.0]
-    rotations:      [0.0, 0.0, 0.0]
+    center_offset:  [0.05, 0.0, -0.1]
+    rotations:      [0.0, -3.74, 0.0]
     fov:            [rad(2*pi), rad(90*pi/180)]
     resolution:     [rad(10.0*pi/180), rad(10.0*pi/180)]
     frontier_percentage_threshold: 0.1 # 0.005
