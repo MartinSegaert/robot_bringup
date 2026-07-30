@@ -9,7 +9,7 @@ def generate_launch_description():
     declare_cfg_arg = DeclareLaunchArgument(
         'cfg',
         default_value='cbf_sim.yaml',
-        description='Config file name (only filename, not full path)'
+        description='Config path relative to robot_bringup/config/ros2'
     )
     
     declare_robot_name_arg = DeclareLaunchArgument(

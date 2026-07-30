@@ -98,7 +98,7 @@ robot:
             - [0.09, 0.09, -0.005, 0, 0, 1]
             - [-0.09, -0.09, -0.005, 0, 0, 1]
     sensor_extrinsics:
-        position: [0.180, 0, -0.025]
+        position: [0, 0, 0.1]
         orientation: [0, 0, 0]
     size:
         xy: 0.22

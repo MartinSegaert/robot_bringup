@@ -1,0 +1,25 @@
+composite_cbf:
+    ros__parameters:
+        epsilon: 0.3
+        gain: 3.0
+        power: 0.8
+        sigma: 0.1
+        kappa: 80.0
+        gamma: 40.0
+        alpha: 4.0
+        # NMPC already produces a closed-loop, body-frame acceleration
+        # command. Additional command filtering adds phase lag and breaks the
+        # minimally invasive behavior of the CBF safety filter.
+        lp_gain_in: 1.0
+        lp_gain_out: 1.0
+        # Match x500_3/nmpc_config.yaml so the CBF does not silently saturate
+        # otherwise valid NMPC commands.
+        max_acc_xy: 4.0
+        max_acc_z: 3.0
+        # Disable the implementation's additional robustness bias so a
+        # barrier-safe NMPC command passes through unchanged.
+        rho: 0.0
+        output_frame_viz: base_link
+        ctrl_freq: 50.0
+        obs_to: 1.0  # obstacle timeout [sec]
+        cmd_to: 1.0  # command timeout [sec]
