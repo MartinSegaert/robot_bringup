@@ -151,6 +151,9 @@ class Px4MavrosBridge(Node):
         self.declare_parameter('setpoint_timeout_s', 0.5)
         self.declare_parameter('auto_offboard', False)
         self.declare_parameter('auto_arm', False)
+        self.declare_parameter('auto_takeoff', False)
+        self.declare_parameter('takeoff_handover_altitude', 2.0)
+        self.declare_parameter('takeoff_altitude_tolerance', 0.2)
         self.declare_parameter('mode_request_period_s', 2.0)
 
         accel_topic = self.get_parameter('accel_input_topic').value
@@ -181,12 +184,23 @@ class Px4MavrosBridge(Node):
         self._timeout_s = float(self.get_parameter('setpoint_timeout_s').value)
         self._auto_offboard = bool(self.get_parameter('auto_offboard').value)
         self._auto_arm = bool(self.get_parameter('auto_arm').value)
+        self._auto_takeoff = bool(self.get_parameter('auto_takeoff').value)
+        self._takeoff_handover_altitude = float(
+            self.get_parameter('takeoff_handover_altitude').value
+        )
+        self._takeoff_altitude_tolerance = float(
+            self.get_parameter('takeoff_altitude_tolerance').value
+        )
         self._mode_request_period_s = float(self.get_parameter('mode_request_period_s').value)
 
         if rate_hz <= 2.0:
             raise ValueError('setpoint_rate_hz must be greater than PX4\'s 2 Hz offboard minimum')
         if self._timeout_s <= 0.0:
             raise ValueError('setpoint_timeout_s must be positive')
+        if self._takeoff_handover_altitude <= 0.0:
+            raise ValueError('takeoff_handover_altitude must be positive')
+        if self._takeoff_altitude_tolerance < 0.0:
+            raise ValueError('takeoff_altitude_tolerance must be non-negative')
         if self._mode_request_period_s <= 0.0:
             raise ValueError('mode_request_period_s must be positive')
 
@@ -204,8 +218,12 @@ class Px4MavrosBridge(Node):
         self._last_command_ns: Optional[int] = None
         self._state = State()
         self._has_odom = False
+        self._latest_odom_z = 0.0
+        self._takeoff_origin_z: Optional[float] = None
+        self._takeoff_complete = not self._auto_takeoff
         self._last_mode_request_ns = 0
         self._mode_request_pending = False
+        self._pending_mode_name: Optional[str] = None
         self._arm_request_pending = False
         self._timed_out = False
         self.create_timer(1.0 / rate_hz, self._publish_setpoint)
@@ -219,6 +237,13 @@ class Px4MavrosBridge(Node):
             f'{self._lidar_child_frame_id}: xyz={self._lidar_translation}, '
             f'xyzw={self._lidar_rotation} (source: {self._lidar_pose_source})'
         )
+        if self._auto_takeoff:
+            self.get_logger().info(
+                'Automatic startup sequence enabled: arm in AUTO.TAKEOFF, '
+                f'then switch to OFFBOARD near '
+                f'{self._takeoff_handover_altitude:.2f} m AGL '
+                f'(tolerance {self._takeoff_altitude_tolerance:.2f} m)'
+            )
 
     def _accel_callback(self, command: Twist) -> None:
         target = PositionTarget()
@@ -243,25 +268,39 @@ class Px4MavrosBridge(Node):
         self._timed_out = False
 
     def _publish_setpoint(self) -> None:
-        if self._last_setpoint is None or self._last_command_ns is None:
-            return
-
         now = self.get_clock().now()
-        age_s = (now.nanoseconds - self._last_command_ns) * 1e-9
-        if age_s > self._timeout_s:
+        command_is_fresh = False
+        age_s = math.inf
+        if self._last_setpoint is not None and self._last_command_ns is not None:
+            age_s = (now.nanoseconds - self._last_command_ns) * 1e-9
+            command_is_fresh = age_s <= self._timeout_s
+
+        # AUTO.TAKEOFF and arming do not depend on the NMPC command stream.
+        # OFFBOARD handover does: PX4 must see fresh setpoints before accepting
+        # the mode, and must never enter it when the controller is unavailable.
+        self._request_offboard_and_arm(now.nanoseconds, command_is_fresh)
+
+        if not command_is_fresh:
             if not self._timed_out:
-                self.get_logger().warning(
-                    f'Acceleration command timed out after {age_s:.2f} s; stopping setpoints'
-                )
+                if math.isfinite(age_s):
+                    self.get_logger().warning(
+                        f'Acceleration command timed out after {age_s:.2f} s; '
+                        'stopping setpoints'
+                    )
                 self._timed_out = True
             return
 
         self._last_setpoint.header.stamp = now.to_msg()
         self._setpoint_pub.publish(self._last_setpoint)
-        self._request_offboard_and_arm(now.nanoseconds)
 
     def _odom_callback(self, odom: Odometry) -> None:
         self._has_odom = True
+        self._latest_odom_z = float(odom.pose.pose.position.z)
+        if self._takeoff_origin_z is None:
+            self._takeoff_origin_z = self._latest_odom_z
+            self.get_logger().info(
+                f'Takeoff altitude origin set to z={self._takeoff_origin_z:.2f} m'
+            )
         self._odom_pub.publish(odom)
         self._publish_odom_tf(odom)
 
@@ -313,9 +352,34 @@ class Px4MavrosBridge(Node):
     def _state_callback(self, state: State) -> None:
         self._state = state
 
-    def _request_offboard_and_arm(self, now_ns: int) -> None:
+    def _request_offboard_and_arm(
+        self, now_ns: int, offboard_command_ready: bool
+    ) -> None:
         if not self._has_odom or not self._state.connected:
             return
+
+        desired_mode: Optional[str] = None
+        if self._auto_takeoff and not self._takeoff_complete:
+            altitude_agl = self._altitude_above_takeoff_origin()
+            handover_altitude = max(
+                0.0,
+                self._takeoff_handover_altitude - self._takeoff_altitude_tolerance,
+            )
+            if self._state.armed and altitude_agl >= handover_altitude:
+                self._takeoff_complete = True
+                self.get_logger().info(
+                    f'Takeoff reached {altitude_agl:.2f} m AGL; '
+                    'handing control to OFFBOARD'
+                )
+            else:
+                desired_mode = 'AUTO.TAKEOFF'
+
+        if (
+            self._takeoff_complete
+            and self._auto_offboard
+            and offboard_command_ready
+        ):
+            desired_mode = 'OFFBOARD'
 
         elapsed_s = (now_ns - self._last_mode_request_ns) * 1e-9
         if elapsed_s < self._mode_request_period_s:
@@ -323,20 +387,27 @@ class Px4MavrosBridge(Node):
 
         requested = False
         if (
-            self._auto_offboard
-            and self._state.mode != 'OFFBOARD'
+            desired_mode is not None
+            and self._state.mode != desired_mode
             and not self._mode_request_pending
             and self._set_mode_client.service_is_ready()
         ):
             request = SetMode.Request()
-            request.custom_mode = 'OFFBOARD'
+            request.custom_mode = desired_mode
             future = self._set_mode_client.call_async(request)
             future.add_done_callback(self._mode_request_done)
             self._mode_request_pending = True
+            self._pending_mode_name = desired_mode
             requested = True
 
+        arming_mode_ready = (
+            not self._auto_takeoff
+            or self._takeoff_complete
+            or self._state.mode == 'AUTO.TAKEOFF'
+        )
         if (
             self._auto_arm
+            and arming_mode_ready
             and not self._state.armed
             and not self._arm_request_pending
             and self._arming_client.service_is_ready()
@@ -351,15 +422,22 @@ class Px4MavrosBridge(Node):
         if requested:
             self._last_mode_request_ns = now_ns
 
+    def _altitude_above_takeoff_origin(self) -> float:
+        if self._takeoff_origin_z is None:
+            return 0.0
+        return max(0.0, self._latest_odom_z - self._takeoff_origin_z)
+
     def _mode_request_done(self, future) -> None:
+        mode_name = self._pending_mode_name or 'flight'
         self._mode_request_pending = False
+        self._pending_mode_name = None
         try:
             response = future.result()
         except Exception as exc:  # noqa: BLE001 - ROS client exceptions include transport details.
-            self.get_logger().warning(f'OFFBOARD mode request failed: {exc}')
+            self.get_logger().warning(f'{mode_name} mode request failed: {exc}')
             return
         if not response.mode_sent:
-            self.get_logger().warning('OFFBOARD mode request was rejected')
+            self.get_logger().warning(f'{mode_name} mode request was rejected')
 
     def _arm_request_done(self, future) -> None:
         self._arm_request_pending = False
