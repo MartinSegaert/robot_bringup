@@ -1,0 +1,12 @@
+/**:
+  ros__parameters:
+    # This stack uses local acceleration setpoints. guided_target repeatedly
+    # tries to transform global targets before a global origin is available,
+    # producing warning spam without providing a required interface.
+    plugin_denylist:
+      - image_pub
+      - vibration
+      - distance_sensor
+      - rangefinder
+      - wheel_odometry
+      - guided_target

@@ -23,6 +23,7 @@ from mavros_msgs.srv import SetMode
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
+from std_srvs.srv import Trigger
 from tf2_ros import TransformBroadcaster
 
 
@@ -134,6 +135,8 @@ class Px4MavrosBridge(Node):
         super().__init__('px4_mavros_bridge')
 
         self.declare_parameter('accel_input_topic', '/sdf_nmpc/cmd/acc')
+        self.declare_parameter('controller_ready_topic', '')
+        self.declare_parameter('controller_hold_service', '')
         self.declare_parameter('setpoint_output_topic', '/mavros/setpoint_raw/local')
         self.declare_parameter('mavros_odom_topic', '/mavros/local_position/odom')
         self.declare_parameter('odom_output_topic', '/rmf/odom')
@@ -154,9 +157,16 @@ class Px4MavrosBridge(Node):
         self.declare_parameter('auto_takeoff', False)
         self.declare_parameter('takeoff_handover_altitude', 2.0)
         self.declare_parameter('takeoff_altitude_tolerance', 0.2)
+        self.declare_parameter('takeoff_hold_mode', 'AUTO.LOITER')
         self.declare_parameter('mode_request_period_s', 2.0)
 
         accel_topic = self.get_parameter('accel_input_topic').value
+        controller_ready_topic = str(
+            self.get_parameter('controller_ready_topic').value
+        ).strip()
+        self._controller_hold_service = str(
+            self.get_parameter('controller_hold_service').value
+        ).strip()
         setpoint_topic = self.get_parameter('setpoint_output_topic').value
         mavros_odom_topic = self.get_parameter('mavros_odom_topic').value
         odom_topic = self.get_parameter('odom_output_topic').value
@@ -191,6 +201,9 @@ class Px4MavrosBridge(Node):
         self._takeoff_altitude_tolerance = float(
             self.get_parameter('takeoff_altitude_tolerance').value
         )
+        self._takeoff_hold_mode = str(
+            self.get_parameter('takeoff_hold_mode').value
+        ).strip()
         self._mode_request_period_s = float(self.get_parameter('mode_request_period_s').value)
 
         if rate_hz <= 2.0:
@@ -201,6 +214,8 @@ class Px4MavrosBridge(Node):
             raise ValueError('takeoff_handover_altitude must be positive')
         if self._takeoff_altitude_tolerance < 0.0:
             raise ValueError('takeoff_altitude_tolerance must be non-negative')
+        if not self._takeoff_hold_mode:
+            raise ValueError('takeoff_hold_mode must not be empty')
         if self._mode_request_period_s <= 0.0:
             raise ValueError('mode_request_period_s must be positive')
 
@@ -208,14 +223,30 @@ class Px4MavrosBridge(Node):
         self._odom_pub = self.create_publisher(Odometry, odom_topic, 10)
         self._tf_broadcaster = TransformBroadcaster(self) if self._publish_tf else None
         self.create_subscription(Twist, accel_topic, self._accel_callback, 10)
+        self._separate_controller_ready_topic = bool(
+            controller_ready_topic and controller_ready_topic != accel_topic
+        )
+        if self._separate_controller_ready_topic:
+            self.create_subscription(
+                Twist,
+                controller_ready_topic,
+                self._controller_ready_callback,
+                10,
+            )
         self.create_subscription(Odometry, mavros_odom_topic, self._odom_callback, _SENSOR_QOS)
         self.create_subscription(State, '/mavros/state', self._state_callback, _SENSOR_QOS)
 
         self._set_mode_client = self.create_client(SetMode, '/mavros/set_mode')
         self._arming_client = self.create_client(CommandBool, '/mavros/cmd/arming')
+        self._controller_hold_client = (
+            self.create_client(Trigger, self._controller_hold_service)
+            if self._controller_hold_service
+            else None
+        )
 
         self._last_setpoint: Optional[PositionTarget] = None
-        self._last_command_ns: Optional[int] = None
+        self._last_setpoint_ns: Optional[int] = None
+        self._last_controller_command_ns: Optional[int] = None
         self._state = State()
         self._has_odom = False
         self._latest_odom_z = 0.0
@@ -225,6 +256,9 @@ class Px4MavrosBridge(Node):
         self._mode_request_pending = False
         self._pending_mode_name: Optional[str] = None
         self._arm_request_pending = False
+        self._controller_hold_ready = not bool(self._controller_hold_service)
+        self._controller_hold_request_pending = False
+        self._last_controller_hold_request_ns = 0
         self._timed_out = False
         self.create_timer(1.0 / rate_hz, self._publish_setpoint)
 
@@ -232,6 +266,16 @@ class Px4MavrosBridge(Node):
             f'Acceleration {accel_topic} -> {setpoint_topic}; '
             f'odometry {mavros_odom_topic} -> {odom_topic}'
         )
+        if self._separate_controller_ready_topic:
+            self.get_logger().info(
+                f'OFFBOARD readiness requires fresh upstream commands on '
+                f'{controller_ready_topic}'
+            )
+        if self._controller_hold_service:
+            self.get_logger().info(
+                f'OFFBOARD handover will first latch the airborne reference via '
+                f'{self._controller_hold_service}'
+            )
         self.get_logger().info(
             f'LiDAR TF {self._lidar_parent_frame_id} -> '
             f'{self._lidar_child_frame_id}: xyz={self._lidar_translation}, '
@@ -240,9 +284,10 @@ class Px4MavrosBridge(Node):
         if self._auto_takeoff:
             self.get_logger().info(
                 'Automatic startup sequence enabled: arm in AUTO.TAKEOFF, '
-                f'then switch to OFFBOARD near '
+                f'then hold in {self._takeoff_hold_mode} near '
                 f'{self._takeoff_handover_altitude:.2f} m AGL '
-                f'(tolerance {self._takeoff_altitude_tolerance:.2f} m)'
+                f'(tolerance {self._takeoff_altitude_tolerance:.2f} m) until '
+                'a fresh controller command allows OFFBOARD'
             )
 
     def _accel_callback(self, command: Twist) -> None:
@@ -264,16 +309,29 @@ class Px4MavrosBridge(Node):
         target.yaw_rate = command.angular.z
 
         self._last_setpoint = target
-        self._last_command_ns = self.get_clock().now().nanoseconds
-        self._timed_out = False
+        self._last_setpoint_ns = self.get_clock().now().nanoseconds
+        if not self._separate_controller_ready_topic:
+            self._last_controller_command_ns = self._last_setpoint_ns
+
+    def _controller_ready_callback(self, _command: Twist) -> None:
+        """Record a real upstream command independently of CBF fallback output."""
+        self._last_controller_command_ns = self.get_clock().now().nanoseconds
 
     def _publish_setpoint(self) -> None:
         now = self.get_clock().now()
         command_is_fresh = False
-        age_s = math.inf
-        if self._last_setpoint is not None and self._last_command_ns is not None:
-            age_s = (now.nanoseconds - self._last_command_ns) * 1e-9
-            command_is_fresh = age_s <= self._timeout_s
+        setpoint_age_s = math.inf
+        controller_age_s = math.inf
+        if self._last_setpoint is not None and self._last_setpoint_ns is not None:
+            setpoint_age_s = (now.nanoseconds - self._last_setpoint_ns) * 1e-9
+        if self._last_controller_command_ns is not None:
+            controller_age_s = (
+                now.nanoseconds - self._last_controller_command_ns
+            ) * 1e-9
+        command_is_fresh = (
+            setpoint_age_s <= self._timeout_s
+            and controller_age_s <= self._timeout_s
+        )
 
         # AUTO.TAKEOFF and arming do not depend on the NMPC command stream.
         # OFFBOARD handover does: PX4 must see fresh setpoints before accepting
@@ -282,14 +340,21 @@ class Px4MavrosBridge(Node):
 
         if not command_is_fresh:
             if not self._timed_out:
-                if math.isfinite(age_s):
+                finite_ages = [
+                    age
+                    for age in (setpoint_age_s, controller_age_s)
+                    if math.isfinite(age)
+                ]
+                if finite_ages:
                     self.get_logger().warning(
-                        f'Acceleration command timed out after {age_s:.2f} s; '
+                        'Controller/setpoint stream timed out after '
+                        f'{max(finite_ages):.2f} s; '
                         'stopping setpoints'
                     )
                 self._timed_out = True
             return
 
+        self._timed_out = False
         self._last_setpoint.header.stamp = now.to_msg()
         self._setpoint_pub.publish(self._last_setpoint)
 
@@ -358,6 +423,11 @@ class Px4MavrosBridge(Node):
         if not self._has_odom or not self._state.connected:
             return
 
+        if not offboard_command_ready and self._controller_hold_service:
+            # A controller restart must latch a new hold pose before it can
+            # regain OFFBOARD control.
+            self._controller_hold_ready = False
+
         desired_mode: Optional[str] = None
         if self._auto_takeoff and not self._takeoff_complete:
             altitude_agl = self._altitude_above_takeoff_origin()
@@ -367,17 +437,44 @@ class Px4MavrosBridge(Node):
             )
             if self._state.armed and altitude_agl >= handover_altitude:
                 self._takeoff_complete = True
+                # A recent AUTO.TAKEOFF request must not delay the safety
+                # transition into the holding mode.
+                self._last_mode_request_ns = 0
                 self.get_logger().info(
                     f'Takeoff reached {altitude_agl:.2f} m AGL; '
-                    'handing control to OFFBOARD'
+                    f'entering {self._takeoff_hold_mode} until a fresh '
+                    'controller command is available'
                 )
             else:
                 desired_mode = 'AUTO.TAKEOFF'
 
         if (
             self._takeoff_complete
-            and self._auto_offboard
             and offboard_command_ready
+            and not self._controller_hold_ready
+        ):
+            self._request_controller_hold(now_ns)
+
+        offboard_handover_ready = (
+            offboard_command_ready and self._controller_hold_ready
+        )
+
+        # Do not leave PX4 in AUTO.TAKEOFF after reaching the handover
+        # altitude. Without a fresh controller command it would continue to
+        # PX4's own, potentially higher, takeoff target. Holding explicitly
+        # also gives controllers that start later a stable state from which to
+        # enter OFFBOARD.
+        if (
+            self._takeoff_complete
+            and self._auto_takeoff
+            and not (self._auto_offboard and offboard_handover_ready)
+        ):
+            desired_mode = self._takeoff_hold_mode
+
+        if (
+            self._takeoff_complete
+            and self._auto_offboard
+            and offboard_handover_ready
         ):
             desired_mode = 'OFFBOARD'
 
@@ -422,6 +519,42 @@ class Px4MavrosBridge(Node):
         if requested:
             self._last_mode_request_ns = now_ns
 
+    def _request_controller_hold(self, now_ns: int) -> None:
+        if (
+            self._controller_hold_client is None
+            or self._controller_hold_request_pending
+            or not self._controller_hold_client.service_is_ready()
+        ):
+            return
+
+        elapsed_s = (
+            now_ns - self._last_controller_hold_request_ns
+        ) * 1e-9
+        if elapsed_s < self._mode_request_period_s:
+            return
+
+        future = self._controller_hold_client.call_async(Trigger.Request())
+        future.add_done_callback(self._controller_hold_request_done)
+        self._controller_hold_request_pending = True
+        self._last_controller_hold_request_ns = now_ns
+
+    def _controller_hold_request_done(self, future) -> None:
+        self._controller_hold_request_pending = False
+        try:
+            response = future.result()
+        except Exception as exc:  # noqa: BLE001 - ROS client transport errors.
+            self.get_logger().warning(
+                f'Controller hover-reference request failed: {exc}'
+            )
+            return
+        if not response.success:
+            self.get_logger().warning('Controller rejected hover-reference request')
+            return
+        self._controller_hold_ready = True
+        self.get_logger().info(
+            'Airborne hover reference latched; OFFBOARD handover enabled'
+        )
+
     def _altitude_above_takeoff_origin(self) -> float:
         if self._takeoff_origin_z is None:
             return 0.0
@@ -452,12 +585,23 @@ class Px4MavrosBridge(Node):
 
 def main(args=None) -> None:
     rclpy.init(args=args)
-    node = Px4MavrosBridge()
+    node: Optional[Px4MavrosBridge] = None
     try:
+        node = Px4MavrosBridge()
         rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    except Exception:
+        # Humble's signal handler can invalidate the context while the
+        # executor is rebuilding its wait set. That surfaces as RCLError
+        # instead of KeyboardInterrupt / ExternalShutdownException. Suppress
+        # only that shutdown race; real runtime errors still propagate.
+        if rclpy.ok():
+            raise
     finally:
-        node.destroy_node()
-        rclpy.shutdown()
+        if node is not None:
+            node.destroy_node()
+        rclpy.try_shutdown()
 
 
 if __name__ == '__main__':

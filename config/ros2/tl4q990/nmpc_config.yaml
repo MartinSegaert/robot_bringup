@@ -53,11 +53,11 @@ ros:
 mpc:
     model: att  # allowed models: acc, att, att_tau, rates, wrench, props
     weights:
-        pos:    [0, 0, 5]  # px, py, pz
-        vel:    [3, 3, 3]  # vx, vy, vz
+        pos:    [0, 0, 2]  # px, py, pz; conservative vertical hold for the heavy airframe
+        vel:    [3, 3, 10]  # vx, vy, vz; damp vertical motion before correcting position
         att:    [50, 50, 100]  # roll, pitch, yaw
         rates:  [0, 0, 3]  # wx, wy, wz
-        acc:    0.05  # typically small value, used to penalize acc or aacc if applicable
+        acc:    1.0  # penalize abrupt vertical acceleration requests to PX4
         slack_df:       [200, 50]  # slack weights (L1, L2) on df constraint
         slack_fov:      [20, 0]  # slack weights (L1, L2) on fov constraint
         slack_brake:    None  # slack weights (L1, L2) on braking dist constraint
@@ -108,13 +108,13 @@ robot:
         pitch: 0.55
         vx: 3
         vy: 3
-        vz: 3
+        vz: 1
         wx: 1.5
         wy: 1.5
         wz: 3
         ax: 4
         ay: 4
-        az: 3
+        az: 0.6
         gamma: 24  # maximum mass-normalized thrust
         torques: 0  # maximum inertia-normalized body torques
         wp: 16  # maximum propeller velocity
