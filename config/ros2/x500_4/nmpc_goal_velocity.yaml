@@ -1,6 +1,6 @@
-# Reuse the generated x500_4 ACADOS solver. Joystick/topic reference mode is
-# handled by the ROS reference generator and does not change the OCP codegen.
-name: sim_lidar
+# Keep goal-velocity path tracking in a solver cache distinct from the SDF
+# and GBPlanner-reference variants.
+name: path_tracking_x500_4_goal_velocity
 
 ## mission parameters
 ref:
@@ -18,10 +18,10 @@ ref:
 ## mission flags
 flags:
     simulation: True
-    enable_sdf: True
+    enable_sdf: False
     sdf_cost: False
-    sdf_constraint: True
-    vfov_constraint: True
+    sdf_constraint: False
+    vfov_constraint: False
     recursive_feasibility: False
     stability: False
 
@@ -36,7 +36,7 @@ nn:
 ## ros-specific params
 ros:
     control_interface: acc
-    auto_enable_sdf: True
+    auto_enable_sdf: False
     timeout_ref: 0.5
     timeout_img: 3
     ref:

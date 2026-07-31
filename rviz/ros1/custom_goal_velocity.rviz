@@ -296,7 +296,7 @@ Visualization Manager:
           Color: 255; 25; 0
           Color Transformer: FlatColor
           Decay Time: 0
-          Enabled: false
+          Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
           Max Intensity: 4096
@@ -317,7 +317,7 @@ Visualization Manager:
             Value: /cbf_pc_selector/output_pc
           Use Fixed Frame: true
           Use rainbow: true
-          Value: false
+          Value: true
       Enabled: true
       Name: CBF
   Enabled: true
@@ -366,7 +366,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 34.96897506713867
+      Distance: 40.208984375
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -381,10 +381,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5953978896141052
+      Pitch: 0.2853981852531433
       Target Frame: rmf
       Value: Orbit (rviz)
-      Yaw: 2.930406093597412
+      Yaw: 4.850419044494629
     Saved: ~
 Window Geometry:
   Displays:
