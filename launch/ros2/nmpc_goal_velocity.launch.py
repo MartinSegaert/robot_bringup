@@ -14,6 +14,7 @@ def generate_launch_description():
     joystick_topic = LaunchConfiguration('joystick_topic')
     viz_sdf_2d = LaunchConfiguration('viz_sdf_2d')
     viz_sdf_3d = LaunchConfiguration('viz_sdf_3d')
+    enable_sdf_nodes = LaunchConfiguration('enable_sdf_nodes')
     cfg_file = LaunchConfiguration('cfg_file')
 
     declare_args = [
@@ -23,6 +24,7 @@ def generate_launch_description():
         DeclareLaunchArgument('odometry', default_value='/rmf/odom'),
         DeclareLaunchArgument('output_topic', default_value='/sdf_nmpc/cmd/acc'),
         DeclareLaunchArgument('joystick_topic', default_value='/sdf_nmpc/joystick'),
+        DeclareLaunchArgument('enable_sdf_nodes', default_value='true'),
         DeclareLaunchArgument('viz_sdf_2d', default_value='true'),
         DeclareLaunchArgument('viz_sdf_3d', default_value='true'),
         DeclareLaunchArgument(
@@ -47,6 +49,7 @@ def generate_launch_description():
             executable='vae_node.py',
             name='vae',
             parameters=common_params,
+            condition=IfCondition(enable_sdf_nodes),
             output='screen',
         ),
         Node(

@@ -1,4 +1,4 @@
-name: sim_lidar  # defines name of generated code
+name: path_tracking_x500_3  # unique cache for the non-SDF ACADOS solver
 
 ## mission parameters
 ref:
@@ -15,10 +15,10 @@ ref:
 ## mission flags
 flags:
     simulation: True  # sim or hardware experiment
-    enable_sdf: True  # enable collision prediction
+    enable_sdf: False  # path tracking only; collision avoidance is handled by the downstream CBF
     sdf_cost: False  # use sdf in cost
-    sdf_constraint: True  # use sdf in constraints
-    vfov_constraint: True  # enable vertical FoV constraint
+    sdf_constraint: False  # do not add neural SDF collision constraints
+    vfov_constraint: False  # FoV constraints are part of the SDF formulation
     recursive_feasibility: False  # enable recursive feasibility constraints
     stability: False  # enable stability terminal cost if rec_feas is enabled
 

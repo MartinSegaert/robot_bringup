@@ -1,0 +1,137 @@
+# Keep goal-velocity path tracking in a solver cache distinct from the SDF
+# and GBPlanner-reference variants.
+name: path_tracking_x500_4_goal_velocity
+
+## mission parameters
+ref:
+    yaw_mode: ref
+    align_yaw_offset: 0
+    stop_and_turn:
+        enable: False
+        dang_min: 1
+    yaw_align_dmin: 0.1
+    # goal_velocity_commander publishes a velocity in m/s.
+    vref: 1
+    wzref: 1
+    zref: 2
+
+## mission flags
+flags:
+    simulation: True
+    enable_sdf: False
+    sdf_cost: False
+    sdf_constraint: False
+    vfov_constraint: False
+    recursive_feasibility: False
+    stability: False
+
+## nn parameters
+nn:
+    size_latent: 128
+    vae_device: cpu
+    sdf_device: cpu
+    vae_weights: vae_lidar.pt
+    sdf_weights: sdf_lidar_25664.pt
+
+## ros-specific params
+ros:
+    control_interface: acc
+    auto_enable_sdf: False
+    timeout_ref: 0.5
+    timeout_img: 3
+    ref:
+        ref_mode: joystick
+        stop_and_go: False
+        wps: [
+            [5, -3, 2, 0], [10, 3, 2, 0], [15, -3, 2, 0], [20, 3, 2, 0], [25, -3, 2, 0], [30, 3, 2, 0],
+            [35, -3, 2, 0], [40, 3, 2, 0], [45, -3, 2, 0], [50, 3, 2, 0], [55, -3, 2, 0], [60, 0, 2, 0]
+        ]
+        wp_tol: 0.8
+        joystick_lp_alpha: 0.9
+    frames:
+        world: map
+        body: base_link
+        sensor: lidar_link
+
+## mpc parameters
+mpc:
+    model: att
+    weights:
+        pos:    [0, 0, 5]
+        vel:    [3, 3, 3]
+        att:    [50, 50, 100]
+        rates:  [0, 0, 3]
+        acc:    0.05
+        slack_df:       [200, 50]
+        slack_fov:      [20, 0]
+        slack_brake:    None
+    N: 20
+    T: 1.5
+    bound_margin: 0.15
+    control_loop_time: 10
+    uniform_dt: True
+    nb_short_nodes: 2
+    lm_reg: 10
+    shift: 0
+    fov_const_offset: 0.05
+    fov_ratio: 0.9
+    allow_dead_reck: False
+    max_solver_fail: 3
+    p_idx:
+        flag: 0
+        W_p_Co: [1, 2, 3]
+        W_R_Co: [4, 5, 6, 7, 8, 9, 10, 11, 12]
+        q_d: [13, 14, 15, 16]
+        latent: 17
+    braking_dist:
+        degree: 4
+        coeff_file: braking_dist/gz/bdist_poly_deg4_3.npy
+    stability:
+        a_b_min: 6.32
+
+## robot
+robot:
+    mass: 2.06
+    inertia: [0.021667, 0.021667, 0.04]
+    alloc:
+        cf: 0.02246
+        ct: 0.00020673
+        motors:
+            - [0.09, -0.09, -0.005, 0, 0, -1]
+            - [-0.09, 0.09, -0.005, 0, 0, -1]
+            - [0.09, 0.09, -0.005, 0, 0, 1]
+            - [-0.09, -0.09, -0.005, 0, 0, 1]
+    sensor_extrinsics:
+        position: [0.05, 0, -0.1]
+        orientation: [0, -3.74, 0]
+    size:
+        xy: 0.22
+        z: 0.1125
+    limits:
+        roll: 0.7
+        pitch: 0.7
+        vx: 3
+        vy: 3
+        vz: 3
+        wx: 2
+        wy: 2
+        wz: 3
+        ax: 4
+        ay: 4
+        az: 3
+        gamma: 20
+        torques: 0
+        wp: 25
+
+## sensor
+sensor:
+    hfov: 3.1415
+    vfov: 0.7854
+    aspect_ratio: 4
+    dmax: 5
+    shape_imgs: [1, 128, 512]
+    is_depth: False
+    is_spherical: True
+    is_normalized: False
+    mm_resolution: 1000
+    dtype: float32

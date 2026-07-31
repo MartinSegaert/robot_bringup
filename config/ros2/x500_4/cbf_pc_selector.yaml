@@ -15,5 +15,5 @@ cbf_pc_selector:
                 is_polar: true
                 # input info
                 azimuth_range: [-180.0, 180.0]  # range of azimuth covered by sensor [deg]
-                elevation_range: [0, 90.0]  # range of azimuth covered by sensor [deg]
+                elevation_range: [0.0, 90.0]  # range of elevation covered by sensor [deg]
                 nb_pts: 65536  # -- used only for preallocating bin size
