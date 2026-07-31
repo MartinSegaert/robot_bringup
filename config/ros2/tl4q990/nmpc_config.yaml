@@ -104,20 +104,20 @@ robot:
         xy: 0.63
         z: 0.25
     limits:
-        roll: 0.55
-        pitch: 0.55
+        roll: 0.7
+        pitch: 0.7
         vx: 3
         vy: 3
-        vz: 1
-        wx: 1.5
-        wy: 1.5
-        wz: 3
-        ax: 4
-        ay: 4
-        az: 0.6
-        gamma: 24  # maximum mass-normalized thrust
+        vz: 3
+        wx: 1
+        wy: 1
+        wz: 0.5
+        ax: 2
+        ay: 2
+        az: 2
+        gamma: 20  # maximum mass-normalized thrust
         torques: 0  # maximum inertia-normalized body torques
-        wp: 16  # maximum propeller velocity
+        wp: 25  # maximum propeller velocity
 
 ## sensor
 sensor:
