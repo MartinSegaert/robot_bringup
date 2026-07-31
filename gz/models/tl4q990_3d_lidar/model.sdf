@@ -238,7 +238,7 @@
 
     <joint name="lidar_joint" type="fixed">
       <parent>base_link</parent><child>lidar_link</child>
-      <pose relative_to="base_link">0 0 0.18 0 0 0</pose>
+      <pose relative_to="base_link">0.1 0 -0.18 0 -3.74 0</pose>
     </joint>
     <link name="lidar_link">
       <pose relative_to="lidar_joint"/>
@@ -260,7 +260,7 @@
         <lidar>
           <scan>
             <horizontal><samples>360</samples><resolution>1</resolution><min_angle>0</min_angle><max_angle>6.28</max_angle></horizontal>
-            <vertical><samples>30</samples><resolution>1</resolution><min_angle>-0.3</min_angle><max_angle>1.5</max_angle></vertical>
+            <vertical><samples>30</samples><resolution>1</resolution><min_angle>0.0</min_angle><max_angle>1.5</max_angle></vertical>
           </scan>
           <range><min>0.8</min><max>50</max><resolution>0.015</resolution></range>
           <noise><type>gaussian</type><mean>0</mean><stddev>0.01</stddev></noise>
