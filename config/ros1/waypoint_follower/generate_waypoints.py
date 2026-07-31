@@ -5,7 +5,7 @@ import yaml
 
 
 DEFAULT_GAP_HILLS = 50.0
-WAYPOINT_ALTITUDE_ABOVE_GROUND = 3.0
+WAYPOINT_ALTITUDE_ABOVE_GROUND = 6.0
 
 
 class IndentedSafeDumper(yaml.SafeDumper):
@@ -83,9 +83,9 @@ def generate_waypoints(crete_params: dict) -> dict:
         "retry_delay": 2.0,
         "max_retries": 0,
         "waypoints": [
-            waypoint("waypoint_1", 0.0, hill_1_y, 3.0, 0.0),
+            waypoint("waypoint_1", 0.0, hill_1_y, WAYPOINT_ALTITUDE_ABOVE_GROUND, 0.0),
 
-            waypoint("waypoint_2", midpoint_between_hills_x, hill_1_y, 3.0, 0.0),
+            waypoint("waypoint_2", midpoint_between_hills_x, hill_1_y, WAYPOINT_ALTITUDE_ABOVE_GROUND, 0.0),
 
             waypoint("waypoint_3", hill_2_center_x, hill_2_y, hill_2_z, 0.0),
             waypoint("waypoint_4", hill_2_center_x, -hill_2_y, hill_2_z, -90.0),
@@ -93,7 +93,7 @@ def generate_waypoints(crete_params: dict) -> dict:
             waypoint("waypoint_5", hill_1_center_x, -hill_1_y, hill_1_z, 180),
             waypoint("waypoint_6", hill_1_center_x, hill_1_y, hill_1_z, 90.0),
 
-            waypoint("waypoint_7", 0.0, 0.0, 3.0, 0.0),
+            waypoint("waypoint_7", 0.0, 0.0, WAYPOINT_ALTITUDE_ABOVE_GROUND, 0.0),
 
             # waypoint("waypoint_1", -10.0, 0.0, 3.0, 0),
             # waypoint("waypoint_2", -10, 10, 3.0, 0),

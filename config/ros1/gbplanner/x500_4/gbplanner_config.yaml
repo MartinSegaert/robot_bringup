@@ -7,8 +7,8 @@ RobotParams:
   type:               kAerialRobot
   # size:               [0.4, 0.0, 0.0] # Actual size of the robot in meters [x, y, z]
   size:               [0.4, 0.4, 0.4] # Actual size of the robot in meters [x, y, z]
-  size_extension_min: [2.0, 2.0, 2.0] # minimum extension outside of robot size allowed to operate
-  size_extension:     [3.0, 3.0, 3.0] # maximum extension outside of the robot size
+  size_extension_min: [4.0, 4.0, 4.0] # minimum extension outside of robot size allowed to operate
+  size_extension:     [5.0, 5.0, 5.0] # maximum extension outside of the robot size
   center_offset:      [0.0, 0.0, 0.0]
   relax_ratio:        0.5 # Used to define an intermediate size between size_extension_min and size_extension for planning
   bound_mode:         kExtendedBound
@@ -38,12 +38,12 @@ SensorParams:
 BoundedSpaceParams:
   Global:
     type:           kCuboid
-    min_val:        [-1000.0, -1000.0, -1000.0]
-    max_val:        [1000.0, 1000.0, 1000.0]
+    min_val:        [-1000.0, -1000.0, -10.0]
+    max_val:        [1000.0, 1000.0, 120.0]
   Local:
     type:           kCuboid
-    min_val:        [-15.0, -15.0, -5.0]
-    max_val:        [15.0, 15.0, 5.0]
+    min_val:        [-15.0, -15.0, -6.0]
+    max_val:        [15.0, 15.0, 6.0]
     min_extension:  [-20.0, -20.0, -20.0]
     max_extension:  [20.0, 20.0, 20.0]
   LocalSearch:
