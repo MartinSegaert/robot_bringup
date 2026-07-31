@@ -109,12 +109,12 @@ robot:
         vx: 3
         vy: 3
         vz: 3
-        wx: 2
-        wy: 2
-        wz: 3
-        ax: 4
-        ay: 4
-        az: 3
+        wx: 1
+        wy: 1
+        wz: 0.5
+        ax: 2
+        ay: 2
+        az: 2
         gamma: 20  # maximum mass-normalized thrust
         torques: 0  # maximum inertia-normalized body torques
         wp: 25  # maximum propeller velocity
