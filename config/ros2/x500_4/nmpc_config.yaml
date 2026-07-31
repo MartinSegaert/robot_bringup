@@ -1,4 +1,4 @@
-name: sim_lidar  # defines name of generated code
+name: path_tracking_x500_4  # unique cache for the non-SDF ACADOS solver
 
 ## mission parameters
 ref:
@@ -15,10 +15,10 @@ ref:
 ## mission flags
 flags:
     simulation: True  # sim or hardware experiment
-    enable_sdf: True  # enable collision prediction
+    enable_sdf: False  # path tracking only; collision avoidance is handled by the downstream CBF
     sdf_cost: False  # use sdf in cost
-    sdf_constraint: True  # use sdf in constraints
-    vfov_constraint: True  # enable vertical FoV constraint
+    sdf_constraint: False  # do not add neural SDF collision constraints
+    vfov_constraint: False  # FoV constraints are part of the SDF formulation
     recursive_feasibility: False  # enable recursive feasibility constraints
     stability: False  # enable stability terminal cost if rec_feas is enabled
 
@@ -98,8 +98,8 @@ robot:
             - [0.09, 0.09, -0.005, 0, 0, 1]
             - [-0.09, -0.09, -0.005, 0, 0, 1]
     sensor_extrinsics:
-        position: [0.180, 0, -0.025]
-        orientation: [0, 0, 0]
+        position: [0.05, 0, -0.1]
+        orientation: [0, -3.74, 0]
     size:
         xy: 0.22
         z: 0.1125
@@ -122,8 +122,8 @@ robot:
 ## sensor
 sensor:
     hfov: 3.1415
-    vfov: 1.57
-    aspect_ratio: 2
+    vfov: 0.7854
+    aspect_ratio: 4
     dmax: 5
     shape_imgs: [1, 128, 512]
     is_depth: False

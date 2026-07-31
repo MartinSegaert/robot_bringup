@@ -1,5 +1,6 @@
 from launch import LaunchDescription
 from launch.actions import GroupAction, DeclareLaunchArgument
+from launch.conditions import IfCondition
 from launch_ros.actions import Node, PushRosNamespace, SetParameter, SetRemap
 from launch.substitutions import LaunchConfiguration, PythonExpression, PathJoinSubstitution
 from ament_index_python.packages import get_package_share_directory
@@ -35,6 +36,11 @@ def generate_launch_description():
             default_value='nmpc_custom_px4.yaml',
             description='Config file'
         ),
+        DeclareLaunchArgument(
+            'enable_sdf_nodes',
+            default_value='true',
+            description='Start the VAE and SDF visualization nodes'
+        ),
         # DeclareLaunchArgument('cfg', default_value='sim_camera.yaml', description='Config preset <cfg>.yaml'),
         # # DeclareLaunchArgument('build', default_value='false', description='Run pre-build step before starting nodes'),
     ]
@@ -43,6 +49,7 @@ def generate_launch_description():
     output_topic = LaunchConfiguration('output_topic')
     input_image = LaunchConfiguration('input_image')
     cfg = LaunchConfiguration('cfg')
+    enable_sdf_nodes = LaunchConfiguration('enable_sdf_nodes')
 
     cfg_file = PathJoinSubstitution([
         get_package_share_directory('robot_bringup'),
@@ -59,6 +66,7 @@ def generate_launch_description():
             'cfg': cfg_file,
             'use_sim_time': use_sim_time,
         }],
+        condition=IfCondition(enable_sdf_nodes),
         output='screen'
     )
 
@@ -93,6 +101,7 @@ def generate_launch_description():
             'cfg': cfg_file,
             'use_sim_time': use_sim_time,
         }],
+        condition=IfCondition(enable_sdf_nodes),
         output='screen'
     )
 
@@ -104,6 +113,7 @@ def generate_launch_description():
             'cfg': cfg_file,
             'use_sim_time': use_sim_time
         }],
+        condition=IfCondition(enable_sdf_nodes),
         output='screen'
     )
 
@@ -115,6 +125,7 @@ def generate_launch_description():
             'cfg': cfg_file,
             'use_sim_time': use_sim_time
         }],
+        condition=IfCondition(enable_sdf_nodes),
         output='screen'
     )
 
