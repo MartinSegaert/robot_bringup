@@ -209,7 +209,7 @@ class PointCloudDownsampler(Node):
     def log_replaced_non_returns(self, replaced_count):
         if replaced_count:
             self.get_logger().info(
-                f'Converted {replaced_count} non-return beams to clearing rays',
+                f'Converted {replaced_count} far non-return beams to clearing rays',
                 throttle_duration_sec=2.0
             )
 

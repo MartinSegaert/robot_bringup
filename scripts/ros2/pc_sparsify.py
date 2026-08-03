@@ -20,7 +20,7 @@ class PointCloudDownsampler(Node):
         self.declare_parameter('method', 'skip')    # 'voxel' or 'skip'
         self.declare_parameter('allow_clear', True)
         self.declare_parameter('max_ray_length_m', 20.0)
-        self.declare_parameter('clearing_ray_margin_m', 0.1)
+        self.declare_parameter('clearing_ray_margin_m', 0.8)
         self.declare_parameter('horizontal_min_angle', -np.pi)
         self.declare_parameter('horizontal_max_angle', np.pi)
         self.declare_parameter('vertical_min_angle', -0.7854)
@@ -169,7 +169,7 @@ class PointCloudDownsampler(Node):
     def log_replaced_non_returns(self, replaced_count):
         if replaced_count:
             self.get_logger().info(
-                f'Converted {replaced_count} non-return beams to clearing rays',
+                f'Converted {replaced_count} far non-return beams to clearing rays',
                 throttle_duration_sec=2.0
             )
 
