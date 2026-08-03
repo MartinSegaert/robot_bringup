@@ -23,8 +23,8 @@ SensorParams:
   OS064:
     type:           kLidar
     max_range:      15
-    center_offset:  [0.0, 0.0, 0.0]
-    rotations:      [0.0, 0.0, 0.0]
+    center_offset:  [0.1, 0, -0.18]
+    rotations:      [0, -3.74, 0]
     fov:            [rad(2*pi), rad(90*pi/180)]
     resolution:     [rad(10.0*pi/180), rad(10.0*pi/180)]
     frontier_percentage_threshold: 0.1 # 0.005
@@ -41,8 +41,8 @@ BoundedSpaceParams:
     max_val:        [1000.0, 1000.0, 1000.0]
   Local:
     type:           kCuboid
-    min_val:        [-15.0, -15.0, -5.0]
-    max_val:        [15.0, 15.0, 5.0]
+    min_val:        [-20.0, -20.0, -7.0]
+    max_val:        [20.0, 20.0, 7.0]
     min_extension:  [-20.0, -20.0, -20.0]
     max_extension:  [20.0, 20.0, 20.0]
   LocalSearch:
@@ -142,10 +142,10 @@ PlanningParams:
   edge_length_min:  0.2
   edge_length_max:  4.0
   edge_overshoot:   0.0 # m - Account for possible tracking error by collision checking on an extended edge
-  num_vertices_max: 2000 # 400 # graph building stops if these many vertices are added 
-  num_edges_max:    14000 # graph building stops if these many edges are added
-  num_loops_cutoff: 2000 # Maximum iterations in which no vertices or edges are added to the graph
-  num_loops_max:    7000 # Maximum iterations possible for graph building
+  num_vertices_max: 5000 # 400 # graph building stops if these many vertices are added 
+  num_edges_max:    20000 # graph building stops if these many edges are added
+  num_loops_cutoff: 4000 # Maximum iterations in which no vertices or edges are added to the graph
+  num_loops_max:    14000 # Maximum iterations possible for graph building
   nearest_range:    4.0 # The max range within which a new vertex can be connected to an existing vertex
   nearest_range_min: 0.2 # >= edge_length_min
   nearest_range_max: 4.0 # <= edge_length_max
@@ -159,7 +159,7 @@ PlanningParams:
   free_voxel_gain:  0.0 # prefer directions towards more free voxels in case of the dead-end
   unknown_voxel_gain: 60.0
 
-  traverse_length_max: 12.0 #5.0  # Maximum length of the best path will be truncated to for actual traversal
+  traverse_length_max: 15.0 #5.0  # Maximum length of the best path will be truncated to for actual traversal
   traverse_time_max: 500.0
   path_safety_enhance_enable: true
   augment_free_voxels_time: 3
