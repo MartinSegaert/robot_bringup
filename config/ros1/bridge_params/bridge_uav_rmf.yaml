@@ -82,6 +82,11 @@ topics:
     queue_size: 10
     direction: ros2_to_ros1
 
+  - topic: /uav/speed_marker
+    type: visualization_msgs/msg/Marker
+    queue_size: 10
+    direction: ros2_to_ros1
+
   - topic: /composite_cbf/input_viz
     type: geometry_msgs/msg/TwistStamped
     queue_size: 10

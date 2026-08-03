@@ -106,15 +106,15 @@ robot:
     limits:
         roll: 0.7
         pitch: 0.7
-        vx: 3
-        vy: 3
-        vz: 3
+        vx: 4
+        vy: 4
+        vz: 4
         wx: 1
         wy: 1
-        wz: 0.5
+        wz: 1
         ax: 2
         ay: 2
-        az: 2
+        az: 3
         gamma: 20  # maximum mass-normalized thrust
         torques: 0  # maximum inertia-normalized body torques
         wp: 25  # maximum propeller velocity
