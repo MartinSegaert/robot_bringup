@@ -69,6 +69,7 @@
     <node pkg="robot_bringup" exec="pc_sparsify.py" name="pc_sparsify" output="screen">
         <param name="input_topic" value="/rmf/lidar/points"/>
         <param name="output_topic" value="/rmf/lidar/points_downsampled"/>
+        <param name="skip_points" value="1"/>
         <param name="allow_clear" value="true"/>
         <param name="max_ray_length_m" value="20.0"/>
         <param name="clearing_ray_margin_m" value="0.1"/>
