@@ -44,3 +44,5 @@ ros2 service call /waypoint_follower/start std_srvs/srv/Trigger "{}"
 The follower publishes each target on `/goal_pose`. The straight-line planner
 then updates `/gbplanner_path` for NMPC. The next target is published when
 `/rmf/odom` is within `reached_distance` (2 m by default) of the active target.
+At startup, the follower waits for the planner's goal subscription to be
+discovered before publishing the first waypoint.

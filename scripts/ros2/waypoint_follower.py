@@ -33,6 +33,8 @@ _GOAL_QOS = QoSProfile(
     depth=1,
 )
 
+_DISCOVERY_RETRY_INTERVAL = 0.2
+
 
 def _number(value, field: str, waypoint_index: int) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
@@ -162,6 +164,7 @@ class WaypointFollower(Node):
         self._send_pending = False
         self._send_timer = None
         self._position = None
+        self._waiting_for_goal_subscriber = False
 
         self._goal_publisher = self.create_publisher(
             PoseStamped, goal_topic, _GOAL_QOS
@@ -222,6 +225,25 @@ class WaypointFollower(Node):
                 'Waypoint mission completed: all waypoints reached'
             )
             return
+
+        # A volatile ROS 2 subscription does not receive a transient-local
+        # sample that was published before DDS endpoint discovery completed.
+        # Wait for the planner to match so the first (and every later) goal is
+        # guaranteed to be delivered as a live sample.
+        if self._goal_publisher.get_subscription_count() == 0:
+            if not self._waiting_for_goal_subscriber:
+                self.get_logger().info(
+                    'Waiting for a subscriber on the goal topic'
+                )
+                self._waiting_for_goal_subscriber = True
+            self._schedule_send(_DISCOVERY_RETRY_INTERVAL)
+            return
+
+        if self._waiting_for_goal_subscriber:
+            self.get_logger().info(
+                'Goal subscriber discovered; publishing waypoint'
+            )
+            self._waiting_for_goal_subscriber = False
 
         waypoint = self._waypoints[self._index]
         goal = PoseStamped()

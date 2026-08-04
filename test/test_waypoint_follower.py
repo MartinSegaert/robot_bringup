@@ -1,6 +1,6 @@
 from pathlib import Path as FilesystemPath
 import sys
-from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 import rclpy
@@ -60,7 +60,9 @@ def test_autostart_publishes_and_advances_waypoints(tmp_path):
         Parameter('reached_distance', value=0.2),
     ])
     published = []
-    follower._goal_publisher = SimpleNamespace(publish=published.append)
+    follower._goal_publisher = Mock()
+    follower._goal_publisher.get_subscription_count.return_value = 1
+    follower._goal_publisher.publish.side_effect = published.append
 
     try:
         assert follower._running
@@ -84,6 +86,39 @@ def test_autostart_publishes_and_advances_waypoints(tmp_path):
         follower._send_next_waypoint()
         assert not follower._running
         assert follower._index == 2
+    finally:
+        follower._cancel_send_timer()
+        follower.destroy_node()
+        rclpy.shutdown()
+
+
+def test_waits_for_goal_subscriber_before_first_publication(tmp_path):
+    waypoint_file = tmp_path / 'waypoints.yaml'
+    waypoint_file.write_text(
+        'waypoints:\n'
+        '  - x: 1.0\n'
+        '    y: 2.0\n',
+        encoding='utf-8',
+    )
+
+    rclpy.init()
+    follower = WaypointFollower(parameter_overrides=[
+        Parameter('use_sim_time', value=False),
+        Parameter('waypoint_file', value=str(waypoint_file)),
+        Parameter('autostart', value=True),
+    ])
+    follower._goal_publisher = Mock()
+    follower._goal_publisher.get_subscription_count.return_value = 0
+
+    try:
+        follower._send_next_waypoint()
+        follower._goal_publisher.publish.assert_not_called()
+        assert follower._send_pending
+
+        follower._goal_publisher.get_subscription_count.return_value = 1
+        follower._send_next_waypoint()
+        follower._goal_publisher.publish.assert_called_once()
+        assert follower._waiting_for_reach
     finally:
         follower._cancel_send_timer()
         follower.destroy_node()

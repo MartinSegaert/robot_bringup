@@ -1,5 +1,6 @@
 from pathlib import Path as FilesystemPath
 import sys
+import time
 from types import SimpleNamespace
 
 import rclpy
@@ -68,6 +69,9 @@ def test_timer_republishes_from_latest_odometry():
     planner = StraightLineGlobalPlanner(parameter_overrides=[
         Parameter('use_sim_time', value=False),
         Parameter('replan_interval', value=0.05),
+        Parameter('odometry_topic', value='/test/planner/odometry'),
+        Parameter('goal_topic', value='/test/planner/goal'),
+        Parameter('path_topic', value='/test/planner/path'),
     ])
     published = []
     planner._path_publisher = SimpleNamespace(publish=published.append)
@@ -87,7 +91,9 @@ def test_timer_republishes_from_latest_odometry():
         planner._odometry_callback(odometry)
         published.clear()
 
-        rclpy.spin_once(planner, timeout_sec=0.2)
+        deadline = time.monotonic() + 0.5
+        while not published and time.monotonic() < deadline:
+            rclpy.spin_once(planner, timeout_sec=0.05)
 
         assert len(published) == 1
         assert published[0].poses[0].pose.position.x == 6.0
