@@ -56,9 +56,6 @@
     </node>
 
     <node pkg="robot_bringup" exec="pc_sparsify.py" name="pc_sparsify" output="screen">
-        <param name="allow_clear" value="true"/>
-        <param name="max_ray_length_m" value="20.0"/>
-        <param name="clearing_ray_margin_m" value="0.1"/>
     </node>
 
     <!-- topics -->

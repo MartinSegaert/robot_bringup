@@ -5,5 +5,5 @@ straight_line_global_planner:
     goal_topic: /goal_pose
     path_topic: /gbplanner_path
     frame_id: map
-    replan_interval: 2.0
     segment_length: 1.0
+    retrigger_distance: 1.0

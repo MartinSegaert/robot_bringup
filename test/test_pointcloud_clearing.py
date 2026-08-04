@@ -8,6 +8,7 @@ SCRIPT_DIR = Path(__file__).parents[1] / 'scripts' / 'ros2'
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from pointcloud_clearing import replace_non_returns  # noqa: E402
+from pc_sparsify import remove_non_returns  # noqa: E402
 
 
 POINT_DTYPE = np.dtype([('x', '<f4'), ('y', '<f4'), ('z', '<f4')])
@@ -102,3 +103,20 @@ def test_disabling_clearing_removes_every_non_return():
         4.0 * directions[0],
         rtol=1e-6,
     )
+
+
+def test_sparsifier_discards_non_returns_instead_of_creating_endpoints():
+    points = np.array(
+        [
+            (1.0, 2.0, 3.0),
+            (np.inf, 0.0, 0.0),
+            (0.0, np.nan, 0.0),
+            (4.0, 5.0, 6.0),
+        ],
+        dtype=POINT_DTYPE,
+    )
+
+    result = remove_non_returns(points)
+
+    assert len(result) == 2
+    np.testing.assert_array_equal(result, points[[0, 3]])

@@ -85,6 +85,55 @@ def build_straight_path(
     return path
 
 
+def distance_to_path(position, path: Path) -> float:
+    """Return the shortest 3D distance from a position to a path polyline."""
+    if not path.poses:
+        return math.inf
+
+    if len(path.poses) == 1:
+        point = path.poses[0].pose.position
+        return math.sqrt(
+            (position.x - point.x) ** 2
+            + (position.y - point.y) ** 2
+            + (position.z - point.z) ** 2
+        )
+
+    minimum_distance = math.inf
+    for start_pose, end_pose in zip(path.poses, path.poses[1:]):
+        start = start_pose.pose.position
+        end = end_pose.pose.position
+        segment_x = end.x - start.x
+        segment_y = end.y - start.y
+        segment_z = end.z - start.z
+        segment_length_squared = (
+            segment_x * segment_x
+            + segment_y * segment_y
+            + segment_z * segment_z
+        )
+
+        if segment_length_squared <= 1e-12:
+            ratio = 0.0
+        else:
+            ratio = (
+                (position.x - start.x) * segment_x
+                + (position.y - start.y) * segment_y
+                + (position.z - start.z) * segment_z
+            ) / segment_length_squared
+            ratio = min(1.0, max(0.0, ratio))
+
+        closest_x = start.x + ratio * segment_x
+        closest_y = start.y + ratio * segment_y
+        closest_z = start.z + ratio * segment_z
+        distance = math.sqrt(
+            (position.x - closest_x) ** 2
+            + (position.y - closest_y) ** 2
+            + (position.z - closest_z) ** 2
+        )
+        minimum_distance = min(minimum_distance, distance)
+
+    return minimum_distance
+
+
 class StraightLineGlobalPlanner(Node):
     def __init__(self, *, parameter_overrides=None) -> None:
         super().__init__(
@@ -96,30 +145,33 @@ class StraightLineGlobalPlanner(Node):
         self.declare_parameter('goal_topic', '/goal_pose')
         self.declare_parameter('path_topic', '/gbplanner_path')
         self.declare_parameter('frame_id', 'map')
-        self.declare_parameter('replan_interval', 2.0)
         self.declare_parameter('segment_length', 1.0)
+        self.declare_parameter('retrigger_distance', 1.0)
 
         odometry_topic = str(self.get_parameter('odometry_topic').value)
         goal_topic = str(self.get_parameter('goal_topic').value)
         path_topic = str(self.get_parameter('path_topic').value)
         self._frame_id = str(self.get_parameter('frame_id').value)
-        self._replan_interval = float(
-            self.get_parameter('replan_interval').value
-        )
         self._segment_length = float(
             self.get_parameter('segment_length').value
         )
-        if self._replan_interval <= 0.0 or not math.isfinite(
-            self._replan_interval
-        ):
-            raise ValueError('replan_interval must be a finite positive number')
+        self._retrigger_distance = float(
+            self.get_parameter('retrigger_distance').value
+        )
         if self._segment_length <= 0.0 or not math.isfinite(
             self._segment_length
         ):
             raise ValueError('segment_length must be a finite positive number')
+        if self._retrigger_distance <= 0.0 or not math.isfinite(
+            self._retrigger_distance
+        ):
+            raise ValueError(
+                'retrigger_distance must be a finite positive number'
+            )
 
         self._odometry: Optional[Odometry] = None
         self._goal: Optional[PoseStamped] = None
+        self._path: Optional[Path] = None
         self._goal_waiting_for_odometry = False
 
         self._path_publisher = self.create_publisher(Path, path_topic, _PATH_QOS)
@@ -127,18 +179,33 @@ class StraightLineGlobalPlanner(Node):
             Odometry, odometry_topic, self._odometry_callback, _SENSOR_QOS
         )
         self.create_subscription(PoseStamped, goal_topic, self._goal_callback, 10)
-        self.create_timer(self._replan_interval, self._timer_callback)
 
         self.get_logger().info(
             f'Straight-line planner: {odometry_topic} + {goal_topic} -> '
             f'{path_topic}; {self._segment_length:.2f} m target segments, '
-            f'replanning every {self._replan_interval:.2f} s'
+            f'retriggering after {self._retrigger_distance:.2f} m path deviation'
         )
 
     def _odometry_callback(self, message: Odometry) -> None:
         self._odometry = message
         if self._goal_waiting_for_odometry:
             self._goal_waiting_for_odometry = False
+            self._publish_path()
+            return
+
+        if self._goal is None or self._path is None:
+            return
+        if not _position_is_finite(message.pose.pose):
+            self.get_logger().error(
+                'Cannot check path deviation from non-finite odometry'
+            )
+            return
+
+        deviation = distance_to_path(message.pose.pose.position, self._path)
+        if deviation > self._retrigger_distance:
+            self.get_logger().info(
+                f'UAV is {deviation:.2f} m from its path; replanning'
+            )
             self._publish_path()
 
     def _goal_callback(self, message: PoseStamped) -> None:
@@ -154,10 +221,7 @@ class StraightLineGlobalPlanner(Node):
             )
             return
 
-        # Do not make a new operator goal wait for the periodic timer.
-        self._publish_path()
-
-    def _timer_callback(self) -> None:
+        # Publish a new operator goal immediately.
         self._publish_path()
 
     def _publish_path(self) -> None:
@@ -177,6 +241,7 @@ class StraightLineGlobalPlanner(Node):
             self._segment_length,
         )
         self._path_publisher.publish(path)
+        self._path = path
 
         start = path.poses[0].pose.position
         target = path.poses[-1].pose.position

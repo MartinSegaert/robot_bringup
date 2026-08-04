@@ -10,8 +10,10 @@ spaced ROS 2 `nav_msgs/Path` from the latest `/rmf/odom` position directly to
 the goal on `/gbplanner_path`. Every pose has its yaw facing the goal. The
 output topic and message type intentionally match the path consumed by NMPC.
 
-All tunable parameters, including the target `segment_length` and
-`replan_interval`, are in
+The planner immediately publishes for each new goal. It then replans only when
+odometry is more than `retrigger_distance` away from the previously published
+path. All tunable parameters, including `segment_length` and
+`retrigger_distance`, are in
 `config/ros2/custom/custom_global_planner.yaml`. The launch file and custom
 Docker Compose stack load this file by default.
 
