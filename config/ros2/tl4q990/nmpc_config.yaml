@@ -106,9 +106,9 @@ robot:
     limits:
         roll: 0.7
         pitch: 0.7
-        vx: 4
-        vy: 4
-        vz: 4
+        vx: 2
+        vy: 2
+        vz: 2
         wx: 1
         wy: 1
         wz: 1

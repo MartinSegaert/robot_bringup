@@ -135,7 +135,7 @@ PlanningParams:
   # exp_sensor_list:  ["CamF"]
   inspection_sensor_list:  ["Cam"]
   # no_gain_zones_list: ["g1"]
-  v_max:            4.0 #1.0 # max velocity m/s
+  v_max:            2.0 #1.0 # max velocity m/s
   v_homing_max:     2.0 #1.0 # max velocity m/s
   yaw_rate_max:     1.0 #0.3 # max angular velocity rad/s
   yaw_tangent_correction: true # If true - all headings will be along the path segment
