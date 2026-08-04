@@ -1,0 +1,179 @@
+Panels:
+  - Class: rviz/Displays
+    Name: Displays
+  - Class: rviz/Selection
+    Name: Selection
+  - Class: rviz/Tool Properties
+    Name: Tool Properties
+  - Class: rviz/Views
+    Name: Views
+  - Class: rviz/Time
+    Name: Time
+Preferences:
+  PromptSaveOnExit: true
+Toolbars:
+  toolButtonStyle: 2
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.5
+      Cell Size: 5
+      Class: rviz/Grid
+      Color: 120; 120; 120
+      Enabled: true
+      Name: Grid
+      Plane: XY
+      Plane Cell Count: 40
+      Reference Frame: <Fixed Frame>
+    - Class: rviz/TF
+      Enabled: true
+      Frame Timeout: 15
+      Marker Scale: 0.5
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+    - Angle Tolerance: 0.1
+      Class: rviz/Odometry
+      Enabled: true
+      Keep: 100
+      Name: UAV odometry
+      Position Tolerance: 0.1
+      Topic: /rmf/odom
+      Unreliable: false
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 0; 255; 0
+      Enabled: true
+      Head Diameter: 0.3
+      Head Length: 0.2
+      Length: 0.2
+      Line Style: Billboards
+      Line Width: 0.08
+      Name: Straight global path
+      Pose Style: Axes
+      Radius: 0.03
+      Shaft Diameter: 0.1
+      Shaft Length: 0.1
+      Topic: /gbplanner_path
+      Unreliable: false
+    - Alpha: 0.5
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 255; 255; 0
+      Enabled: true
+      Line Style: Lines
+      Line Width: 0.03
+      Name: NMPC reference horizon
+      Pose Style: None
+      Topic: /sdf_nmpc/viz/horizon_ref
+      Unreliable: false
+    - Alpha: 0.7
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 0; 180; 255
+      Enabled: true
+      Line Style: Lines
+      Line Width: 0.03
+      Name: NMPC predicted horizon
+      Pose Style: None
+      Topic: /sdf_nmpc/viz/horizon_traj
+      Unreliable: false
+    - Alpha: 0.4
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: AxisColor
+      Decay Time: 0
+      Enabled: true
+      Name: LiDAR
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 2
+      Size (m): 0.02
+      Style: Points
+      Topic: /rmf/lidar/points_downsampled
+      Unreliable: false
+      Use Fixed Frame: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 60; 60
+      Color Transformer: FlatColor
+      Decay Time: 0
+      Enabled: true
+      Name: CBF obstacle cloud
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 4
+      Size (m): 0.05
+      Style: Points
+      Topic: /cbf_pc_selector/output_pc
+      Unreliable: false
+      Use Fixed Frame: true
+    - Alpha: 1
+      Class: rviz/TwistStamped
+      Color: 255; 170; 0
+      Enabled: true
+      Name: NMPC command into CBF
+      Topic: /composite_cbf/input_viz
+      Unreliable: false
+    - Alpha: 1
+      Class: rviz/TwistStamped
+      Color: 0; 255; 100
+      Enabled: true
+      Name: Safe CBF command
+      Topic: /composite_cbf/output_viz
+      Unreliable: false
+    - Class: rviz/Marker
+      Enabled: true
+      Name: UAV speed
+      Topic: /uav/speed_marker
+      Unreliable: false
+  Enabled: true
+  Global Options:
+    Background Color: 20; 20; 20
+    Default Light: true
+    Fixed Frame: world
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz/Interact
+      Hide Inactive Objects: true
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+    - Class: rviz/FocusCamera
+    - Class: rviz/Measure
+    - Class: rviz/SetGoal
+      Topic: /move_base_simple/goal
+    - Class: rviz/PublishPoint
+      Single click: true
+      Topic: /clicked_point
+  Views:
+    Current:
+      Class: rviz/Orbit
+      Distance: 35
+      Focal Point:
+        X: 10
+        Y: 0
+        Z: 0
+      Name: Current View
+      Pitch: 0.55
+      Target Frame: world
+      Yaw: 3.14
+    Saved: ~

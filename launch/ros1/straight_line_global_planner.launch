@@ -1,0 +1,35 @@
+<launch>
+  <param name="use_sim_time" value="true"/>
+
+  <arg name="robot_name" default="rmf"/>
+  <arg name="odometry_topic" default="/$(arg robot_name)/odom"/>
+  <arg name="goal_topic" default="/move_base_simple/goal"/>
+  <arg name="path_topic" default="/gbplanner_path"/>
+  <arg name="frame_id" default="world"/>
+  <arg name="rviz_en" default="true"/>
+  <arg name="rviz_config"
+       default="$(find robot_bringup)/rviz/ros1/straight_line_px4.rviz"/>
+
+  <!-- Preserve the frame relationship used by the old GBPlanner launch. -->
+  <node pkg="tf"
+        type="static_transform_publisher"
+        name="tf_world_map"
+        args="0 0 0 0 0 0 world map 10"/>
+
+  <node pkg="robot_bringup"
+        type="straight_line_global_planner.py"
+        name="straight_line_global_planner"
+        output="screen">
+    <param name="odometry_topic" value="$(arg odometry_topic)"/>
+    <param name="goal_topic" value="$(arg goal_topic)"/>
+    <param name="path_topic" value="$(arg path_topic)"/>
+    <param name="frame_id" value="$(arg frame_id)"/>
+  </node>
+
+  <node pkg="rviz"
+        type="rviz"
+        name="global_planner_ui"
+        output="screen"
+        args="-d $(arg rviz_config)"
+        if="$(arg rviz_en)"/>
+</launch>

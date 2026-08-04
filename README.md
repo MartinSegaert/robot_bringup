@@ -1,6 +1,15 @@
 # robot_bringup
 Launch and config files for the robot
 
+## ROS 1 straight-line global planner
+
+`straight_line_global_planner.launch` replaces GBPlanner for stacks where the
+downstream CBF is responsible for collision avoidance. It waits for
+`/rmf/odom`, accepts a `geometry_msgs/PoseStamped` goal on
+`/move_base_simple/goal`, and publishes a two-pose `nav_msgs/Path` from the
+current position directly to the goal on `/gbplanner_path`. The topic and
+message type intentionally match the old GBPlanner output consumed by NMPC.
+
 ## ROS 1 automatic waypoint follower
 
 Edit `config/ros1/waypoint_follower/waypoints.yaml`. Coordinates are in the

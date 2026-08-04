@@ -41,6 +41,7 @@ if(ROS_VERSION EQUAL 1)
     )
 
     catkin_install_python(PROGRAMS
+      scripts/ros1/straight_line_global_planner.py
       scripts/ros1/waypoint_follower.py
       DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
@@ -49,8 +50,14 @@ if(ROS_VERSION EQUAL 1)
       DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config/ros1
     )
 
-    install(FILES launch/ros1/waypoint_follower.launch
+    install(FILES
+      launch/ros1/straight_line_global_planner.launch
+      launch/ros1/waypoint_follower.launch
       DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch/ros1
+    )
+
+    install(FILES rviz/ros1/straight_line_px4.rviz
+      DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/rviz/ros1
     )
 
 else()
