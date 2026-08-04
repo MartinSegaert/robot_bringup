@@ -41,7 +41,6 @@ if(ROS_VERSION EQUAL 1)
     )
 
     catkin_install_python(PROGRAMS
-      scripts/ros1/straight_line_global_planner.py
       scripts/ros1/waypoint_follower.py
       DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
@@ -51,13 +50,8 @@ if(ROS_VERSION EQUAL 1)
     )
 
     install(FILES
-      launch/ros1/straight_line_global_planner.launch
       launch/ros1/waypoint_follower.launch
       DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch/ros1
-    )
-
-    install(FILES rviz/ros1/straight_line_px4.rviz
-      DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/rviz/ros1
     )
 
 else()
@@ -74,6 +68,11 @@ else()
     # Install config files
     install(DIRECTORY
     config
+    DESTINATION share/${PROJECT_NAME}/
+    )
+
+    install(DIRECTORY
+    rviz
     DESTINATION share/${PROJECT_NAME}/
     )
 
@@ -102,6 +101,9 @@ else()
     find_package(ament_cmake_pytest REQUIRED)
     ament_add_pytest_test(test_pointcloud_clearing
       test/test_pointcloud_clearing.py
+    )
+    ament_add_pytest_test(test_straight_line_global_planner
+      test/test_straight_line_global_planner.py
     )
     endif()
 

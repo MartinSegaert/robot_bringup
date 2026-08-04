@@ -1,0 +1,246 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+  - Class: rviz_common/Selection
+    Name: Selection
+  - Class: rviz_common/Tool Properties
+    Name: Tool Properties
+  - Class: rviz_common/Views
+    Name: Views
+  - Class: rviz_common/Time
+    Experimental: false
+    Name: Time
+    SyncMode: 0
+    SyncSource: ""
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.5
+      Cell Size: 1
+      Class: rviz_default_plugins/Grid
+      Color: 120; 120; 120
+      Enabled: true
+      Name: Grid
+      Plane: XY
+      Plane Cell Count: 100
+      Reference Frame: <Fixed Frame>
+      Value: true
+    - Angle Tolerance: 0
+      Class: rviz_default_plugins/Odometry
+      Enabled: true
+      Keep: 1
+      Name: UAV odometry
+      Position Tolerance: 0
+      Shape:
+        Alpha: 1
+        Axes Length: 0.5
+        Axes Radius: 0.05
+        Color: 255; 25; 0
+        Value: Axes
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /rmf/odom
+      Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz_default_plugins/Path
+      Color: 0; 255; 0
+      Enabled: true
+      Head Diameter: 0.2
+      Head Length: 0.15
+      Length: 0.2
+      Line Style: Billboards
+      Line Width: 0.08
+      Name: Straight global path
+      Pose Color: 0; 255; 0
+      Pose Style: Axes
+      Radius: 0.03
+      Shaft Diameter: 0.08
+      Shaft Length: 0.1
+      Topic:
+        Depth: 5
+        Durability Policy: Transient Local
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /gbplanner_path
+      Value: true
+    - Alpha: 0.7
+      Buffer Length: 1
+      Class: rviz_default_plugins/Path
+      Color: 255; 255; 0
+      Enabled: true
+      Line Style: Billboards
+      Line Width: 0.03
+      Name: NMPC reference horizon
+      Pose Style: None
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /sdf_nmpc/viz/horizon_ref
+      Value: true
+    - Alpha: 0.7
+      Buffer Length: 1
+      Class: rviz_default_plugins/Path
+      Color: 0; 180; 255
+      Enabled: true
+      Line Style: Billboards
+      Line Width: 0.03
+      Name: NMPC predicted horizon
+      Pose Style: None
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /sdf_nmpc/viz/horizon_traj
+      Value: true
+    - Alpha: 0.35
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz_default_plugins/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: AxisColor
+      Decay Time: 0
+      Enabled: true
+      Name: LiDAR
+      Position Transformer: XYZ
+      Selectable: true
+      Size (Pixels): 2
+      Size (m): 0.02
+      Style: Points
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Best Effort
+        Value: /rmf/lidar/points_downsampled
+      Use Fixed Frame: true
+      Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz_default_plugins/PointCloud2
+      Color: 255; 60; 60
+      Color Transformer: FlatColor
+      Decay Time: 0
+      Enabled: true
+      Name: CBF obstacle cloud
+      Position Transformer: XYZ
+      Selectable: true
+      Size (Pixels): 4
+      Size (m): 0.05
+      Style: Points
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /cbf_pc_selector/output_pc
+      Use Fixed Frame: true
+      Value: true
+    - Alpha: 1
+      Angular Arrow Scale: 1
+      Angular Color: 255; 170; 0
+      Arrow Width: 0.5
+      Class: rviz_default_plugins/TwistStamped
+      Enabled: true
+      Hide Small Values: false
+      History Length: 1
+      Linear Arrow Scale: 1
+      Linear Color: 255; 170; 0
+      Name: NMPC command into CBF
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /composite_cbf/input_viz
+      Value: true
+    - Alpha: 1
+      Angular Arrow Scale: 1
+      Angular Color: 0; 255; 100
+      Arrow Width: 0.5
+      Class: rviz_default_plugins/TwistStamped
+      Enabled: true
+      Hide Small Values: false
+      History Length: 1
+      Linear Arrow Scale: 1
+      Linear Color: 0; 255; 100
+      Name: Safe CBF command
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /composite_cbf/output_viz
+      Value: true
+  Enabled: true
+  Global Options:
+    Background Color: 20; 20; 20
+    Fixed Frame: map
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz_default_plugins/Interact
+      Hide Inactive Objects: true
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/FocusCamera
+    - Class: rviz_default_plugins/Measure
+      Line color: 128; 128; 0
+    - Class: rviz_default_plugins/SetGoal
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /goal_pose
+    - Class: rviz_default_plugins/PublishPoint
+      Single click: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /clicked_point
+  Transformation:
+    Current:
+      Class: rviz_default_plugins/TF
+  Value: true
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 35
+      Focal Point:
+        X: 10
+        Y: 0
+        Z: 0
+      Name: Current View
+      Pitch: 0.55
+      Target Frame: map
+      Value: Orbit (rviz)
+      Yaw: 3.14
+    Saved: ~
