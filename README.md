@@ -5,14 +5,15 @@ Launch and config files for the robot
 
 `straight_line_global_planner.launch.py` replaces GBPlanner for stacks where
 the downstream CBF is responsible for collision avoidance. It accepts a ROS 2
-`geometry_msgs/PoseStamped` goal on `/goal_pose` and publishes a two-pose ROS 2
-`nav_msgs/Path` from the latest `/rmf/odom` position directly to the goal on
-`/gbplanner_path`. It republishes from the latest position every two seconds by
-default; set `replan_interval` to change that period. The output topic and
-message type intentionally match the path consumed by NMPC.
+`geometry_msgs/PoseStamped` goal on `/goal_pose` and publishes an equally
+spaced ROS 2 `nav_msgs/Path` from the latest `/rmf/odom` position directly to
+the goal on `/gbplanner_path`. Every pose has its yaw facing the goal. The
+output topic and message type intentionally match the path consumed by NMPC.
 
-The custom Docker Compose stack exposes the same setting through
-`GLOBAL_PLANNER_REPLAN_INTERVAL`.
+All tunable parameters, including the target `segment_length` and
+`replan_interval`, are in
+`config/ros2/custom/custom_global_planner.yaml`. The launch file and custom
+Docker Compose stack load this file by default.
 
 ## ROS 2 automatic waypoint follower
 

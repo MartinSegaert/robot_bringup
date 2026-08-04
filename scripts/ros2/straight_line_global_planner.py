@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Periodically publish a collision-unaware path from the UAV to its goal."""
 
-import copy
 import math
 from typing import Optional
 
@@ -40,22 +39,10 @@ def _position_is_finite(pose: Pose) -> bool:
     )
 
 
-def _normalized_orientation(orientation: Quaternion) -> Quaternion:
-    norm = math.sqrt(
-        orientation.x * orientation.x
-        + orientation.y * orientation.y
-        + orientation.z * orientation.z
-        + orientation.w * orientation.w
-    )
-    if not math.isfinite(norm) or norm < 1e-9:
-        return Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
-
-    return Quaternion(
-        x=orientation.x / norm,
-        y=orientation.y / norm,
-        z=orientation.z / norm,
-        w=orientation.w / norm,
-    )
+def _yaw_orientation(yaw: float) -> Quaternion:
+    """Return a unit quaternion containing only the requested yaw."""
+    half_yaw = 0.5 * yaw
+    return Quaternion(z=math.sin(half_yaw), w=math.cos(half_yaw))
 
 
 def build_straight_path(
@@ -63,23 +50,38 @@ def build_straight_path(
     goal: PoseStamped,
     stamp,
     frame_id: str,
+    segment_length: float,
 ) -> Path:
-    """Build the two-pose path consumed by the existing NMPC reference node."""
+    """Build an equally spaced straight path consumed by the NMPC node."""
+    if not math.isfinite(segment_length) or segment_length <= 0.0:
+        raise ValueError('segment_length must be a finite positive number')
+
     path = Path()
     path.header.stamp = stamp
     path.header.frame_id = frame_id
 
-    start = PoseStamped()
-    start.header = path.header
-    start.pose = copy.deepcopy(odometry.pose.pose)
-    start.pose.orientation = _normalized_orientation(start.pose.orientation)
+    start = odometry.pose.pose.position
+    target = goal.pose.position
+    dx = target.x - start.x
+    dy = target.y - start.y
+    dz = target.z - start.z
+    distance = math.sqrt(dx * dx + dy * dy + dz * dz)
 
-    target = PoseStamped()
-    target.header = path.header
-    target.pose = copy.deepcopy(goal.pose)
-    target.pose.orientation = _normalized_orientation(target.pose.orientation)
+    # Pick the closest positive integer segment count, then interpolate using
+    # that count so all segments have exactly the same length.
+    segment_count = max(1, math.floor(distance / segment_length + 0.5))
+    orientation = _yaw_orientation(math.atan2(dy, dx))
 
-    path.poses = [start, target]
+    for index in range(segment_count + 1):
+        ratio = index / segment_count
+        pose = PoseStamped()
+        pose.header = path.header
+        pose.pose.position.x = (1.0 - ratio) * start.x + ratio * target.x
+        pose.pose.position.y = (1.0 - ratio) * start.y + ratio * target.y
+        pose.pose.position.z = (1.0 - ratio) * start.z + ratio * target.z
+        pose.pose.orientation = orientation
+        path.poses.append(pose)
+
     return path
 
 
@@ -95,6 +97,7 @@ class StraightLineGlobalPlanner(Node):
         self.declare_parameter('path_topic', '/gbplanner_path')
         self.declare_parameter('frame_id', 'map')
         self.declare_parameter('replan_interval', 2.0)
+        self.declare_parameter('segment_length', 1.0)
 
         odometry_topic = str(self.get_parameter('odometry_topic').value)
         goal_topic = str(self.get_parameter('goal_topic').value)
@@ -103,10 +106,17 @@ class StraightLineGlobalPlanner(Node):
         self._replan_interval = float(
             self.get_parameter('replan_interval').value
         )
+        self._segment_length = float(
+            self.get_parameter('segment_length').value
+        )
         if self._replan_interval <= 0.0 or not math.isfinite(
             self._replan_interval
         ):
             raise ValueError('replan_interval must be a finite positive number')
+        if self._segment_length <= 0.0 or not math.isfinite(
+            self._segment_length
+        ):
+            raise ValueError('segment_length must be a finite positive number')
 
         self._odometry: Optional[Odometry] = None
         self._goal: Optional[PoseStamped] = None
@@ -121,7 +131,8 @@ class StraightLineGlobalPlanner(Node):
 
         self.get_logger().info(
             f'Straight-line planner: {odometry_topic} + {goal_topic} -> '
-            f'{path_topic}; replanning every {self._replan_interval:.2f} s'
+            f'{path_topic}; {self._segment_length:.2f} m target segments, '
+            f'replanning every {self._replan_interval:.2f} s'
         )
 
     def _odometry_callback(self, message: Odometry) -> None:
@@ -163,18 +174,20 @@ class StraightLineGlobalPlanner(Node):
             self._goal,
             self.get_clock().now().to_msg(),
             self._frame_id,
+            self._segment_length,
         )
         self._path_publisher.publish(path)
 
         start = path.poses[0].pose.position
-        target = path.poses[1].pose.position
+        target = path.poses[-1].pose.position
         distance = math.sqrt(
             (target.x - start.x) ** 2
             + (target.y - start.y) ** 2
             + (target.z - start.z) ** 2
         )
         self.get_logger().info(
-            f'Published {distance:.2f} m straight path from '
+            f'Published {distance:.2f} m straight path with '
+            f'{len(path.poses) - 1} equal segments from '
             f'({start.x:.2f}, {start.y:.2f}, {start.z:.2f}) to '
             f'({target.x:.2f}, {target.y:.2f}, {target.z:.2f})'
         )
