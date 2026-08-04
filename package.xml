@@ -22,7 +22,9 @@
   <depend condition="$ROS_VERSION == 2">geometry_msgs</depend>
   <depend condition="$ROS_VERSION == 2">nav_msgs</depend>
   <depend condition="$ROS_VERSION == 2">std_msgs</depend>
+  <depend condition="$ROS_VERSION == 2">std_srvs</depend>
   <depend condition="$ROS_VERSION == 2">visualization_msgs</depend>
+  <exec_depend condition="$ROS_VERSION == 2">python3-yaml</exec_depend>
 
   <test_depend condition="$ROS_VERSION == 2">ament_cmake_pytest</test_depend>
 

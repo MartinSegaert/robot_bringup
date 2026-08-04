@@ -7,8 +7,8 @@ if(DEFINED ENV{ROS_VERSION})
 else()
   # Fallback detection
   if(DEFINED ENV{ROS_DISTRO})
-    if($ENV{ROS_DISTRO} STREQUAL "noetic" OR 
-       $ENV{ROS_DISTRO} STREQUAL "melodic" OR 
+    if($ENV{ROS_DISTRO} STREQUAL "noetic" OR
+       $ENV{ROS_DISTRO} STREQUAL "melodic" OR
        $ENV{ROS_DISTRO} STREQUAL "kinetic")
       set(ROS_VERSION 1)
     else()
@@ -38,20 +38,6 @@ if(ROS_VERSION EQUAL 1)
     include_directories(
     # include
     ${catkin_INCLUDE_DIRS}
-    )
-
-    catkin_install_python(PROGRAMS
-      scripts/ros1/waypoint_follower.py
-      DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-    )
-
-    install(DIRECTORY config/ros1/waypoint_follower
-      DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config/ros1
-    )
-
-    install(FILES
-      launch/ros1/waypoint_follower.launch
-      DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch/ros1
     )
 
 else()
@@ -104,6 +90,9 @@ else()
     )
     ament_add_pytest_test(test_straight_line_global_planner
       test/test_straight_line_global_planner.py
+    )
+    ament_add_pytest_test(test_waypoint_follower
+      test/test_waypoint_follower.py
     )
     endif()
 

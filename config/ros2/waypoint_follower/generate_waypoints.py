@@ -55,7 +55,7 @@ def generate_waypoints(crete_params: dict) -> dict:
     hill_2 = hills[1]
     if not isinstance(hill_1, dict) or not isinstance(hill_2, dict):
         raise ValueError("The first two hill entries must be mappings")
-    
+
     offset_x = crete_params.get("offset_x", 5)
     offset_y = crete_params.get("offset_y", 0)
     gap_hills = crete_params.get("gap_hills", DEFAULT_GAP_HILLS)
@@ -78,7 +78,7 @@ def generate_waypoints(crete_params: dict) -> dict:
     hill_2_y = 3.0 / 4.0 * hill_2_width / 2 + offset_y
 
     return {
-        "frame_id": "world",
+        "frame_id": "map",
         "inter_waypoint_delay": 1.0,
         "retry_delay": 2.0,
         "max_retries": 0,

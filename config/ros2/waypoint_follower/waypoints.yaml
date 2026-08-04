@@ -1,7 +1,5 @@
-frame_id: world
+frame_id: map
 inter_waypoint_delay: 1.0
-retry_delay: 2.0
-max_retries: 0
 waypoints:
   - name: waypoint_1
     x: 0.0
