@@ -83,6 +83,10 @@ def generate_waypoints(crete_params: dict) -> dict:
         "retry_delay": 2.0,
         "max_retries": 0,
         "waypoints": [
+
+            waypoint("waypoint_0_1", -25, 25, WAYPOINT_ALTITUDE_ABOVE_GROUND+10, 0.0),
+            waypoint("waypoint_0_1", -25, -25, WAYPOINT_ALTITUDE_ABOVE_GROUND+5, 0.0),
+
             waypoint("waypoint_1", 0.0, hill_1_y, WAYPOINT_ALTITUDE_ABOVE_GROUND, 0.0),
 
             waypoint("waypoint_2", midpoint_between_hills_x, hill_1_y, WAYPOINT_ALTITUDE_ABOVE_GROUND, 0.0),

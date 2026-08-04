@@ -17,6 +17,14 @@ path. All tunable parameters, including `segment_length` and
 `config/ros2/custom/custom_global_planner.yaml`. The launch file and custom
 Docker Compose stack load this file by default.
 
+The planner also publishes a live allowed reference speed on
+`/sdf_nmpc/reference_speed`. It uses the smaller of the distance to the closest
+finite lidar point and the remaining 3D distance to the goal. The speed is
+`min_speed` at or below `min_distance`, `max_speed` at or above `max_distance`,
+and linearly interpolated between them. The NMPC reference generator consumes
+this topic and applies a new speed on its next reference horizon; `ref.vref` in
+the NMPC YAML remains its startup value.
+
 ## ROS 2 automatic waypoint follower
 
 Edit `config/ros2/waypoint_follower/waypoints.yaml`. Coordinates are in the

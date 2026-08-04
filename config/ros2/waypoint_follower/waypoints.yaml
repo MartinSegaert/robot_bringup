@@ -1,6 +1,18 @@
 frame_id: map
 inter_waypoint_delay: 1.0
+retry_delay: 2.0
+max_retries: 0
 waypoints:
+  - name: waypoint_0_1
+    x: -25.0
+    y: 25.0
+    z: 16.0
+    yaw_deg: 0.0
+  - name: waypoint_0_1
+    x: -25.0
+    y: -25.0
+    z: 11.0
+    yaw_deg: 0.0
   - name: waypoint_1
     x: 0.0
     y: 37.5

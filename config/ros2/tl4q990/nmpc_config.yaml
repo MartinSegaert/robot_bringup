@@ -8,7 +8,7 @@ ref:
         enable: False
         dang_min: 1  # angle threshold to trigger stop and turn [rad]
     yaw_align_dmin: 0.1  # minimum distance under which yaw alignment is disabled [m]
-    vref: 2  # norm of reference velocity [m/s]
+    vref: 5  # norm of reference velocity [m/s]
     wzref: 1  # norm of reference yawrate [rad/s]
     zref: 2  # desired hovering z for takeoff [m]
 
@@ -106,15 +106,15 @@ robot:
     limits:
         roll: 0.7
         pitch: 0.7
-        vx: 2
-        vy: 2
-        vz: 2
-        wx: 1
-        wy: 1
-        wz: 1
+        vx: 10
+        vy: 10
+        vz: 10
+        wx: 2
+        wy: 2
+        wz: 2
         ax: 2
         ay: 2
-        az: 3
+        az: 2
         gamma: 20  # maximum mass-normalized thrust
         torques: 0  # maximum inertia-normalized body torques
         wp: 25  # maximum propeller velocity

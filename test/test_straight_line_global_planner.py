@@ -1,22 +1,27 @@
-from pathlib import Path as FilesystemPath
 import math
+from pathlib import Path as FilesystemPath
 import sys
 from types import SimpleNamespace
 
-import rclpy
 from builtin_interfaces.msg import Time
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Odometry, Path
+import rclpy
 from rclpy.parameter import Parameter
+from sensor_msgs_py import point_cloud2
+from std_msgs.msg import Header
 
 
 SCRIPT_DIR = FilesystemPath(__file__).parents[1] / 'scripts' / 'ros2'
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from straight_line_global_planner import (  # noqa: E402
-    StraightLineGlobalPlanner,
+    allowed_reference_speed,
     build_straight_path,
+    closest_lidar_distance,
     distance_to_path,
+    interpolate_reference_speed,
+    StraightLineGlobalPlanner,
 )
 
 
@@ -119,6 +124,42 @@ def test_distance_to_path_uses_nearest_point_on_segment():
     assert math.isclose(distance_to_path(position, path), 5.0)
 
 
+def test_reference_speed_is_clipped_and_linearly_interpolated():
+    limits = (1.0, 5.0, 0.5, 4.5)
+
+    assert interpolate_reference_speed(0.2, *limits) == 0.5
+    assert interpolate_reference_speed(1.0, *limits) == 0.5
+    assert interpolate_reference_speed(3.0, *limits) == 2.5
+    assert interpolate_reference_speed(5.0, *limits) == 4.5
+    assert interpolate_reference_speed(math.inf, *limits) == 4.5
+
+
+def test_nearest_obstacle_or_arrival_point_limits_reference_speed():
+    # The obstacle is far away, but the 2 m arrival distance limits the speed.
+    assert math.isclose(
+        allowed_reference_speed(8.0, 2.0, 1.0, 5.0, 1.0, 5.0),
+        2.0,
+    )
+    # The arrival point is far away, but a close obstacle has the same effect.
+    assert math.isclose(
+        allowed_reference_speed(2.0, 8.0, 1.0, 5.0, 1.0, 5.0),
+        2.0,
+    )
+
+
+def test_closest_lidar_distance_ignores_non_finite_points():
+    cloud = point_cloud2.create_cloud_xyz32(
+        Header(frame_id='lidar_link'),
+        [
+            (3.0, 4.0, 0.0),
+            (math.nan, 0.0, 0.0),
+            (1.0, 2.0, 2.0),
+        ],
+    )
+
+    assert math.isclose(closest_lidar_distance(cloud), 3.0)
+
+
 def test_deviation_retriggers_planner_from_latest_odometry():
     rclpy.init()
     planner = StraightLineGlobalPlanner(parameter_overrides=[
@@ -128,9 +169,21 @@ def test_deviation_retriggers_planner_from_latest_odometry():
         Parameter('odometry_topic', value='/test/planner/odometry'),
         Parameter('goal_topic', value='/test/planner/goal'),
         Parameter('path_topic', value='/test/planner/path'),
+        Parameter('lidar_topic', value='/test/planner/lidar'),
+        Parameter(
+            'reference_speed_topic', value='/test/planner/reference_speed'
+        ),
+        Parameter('min_speed', value=1.0),
+        Parameter('max_speed', value=5.0),
+        Parameter('min_distance', value=1.0),
+        Parameter('max_distance', value=5.0),
     ])
     published = []
+    published_speeds = []
     planner._path_publisher = SimpleNamespace(publish=published.append)
+    planner._reference_speed_publisher = SimpleNamespace(
+        publish=published_speeds.append
+    )
 
     try:
         odometry = Odometry()
@@ -142,6 +195,14 @@ def test_deviation_retriggers_planner_from_latest_odometry():
         planner._goal_callback(goal)
         assert len(published) == 1
         assert published[-1].poses[0].pose.position.x == 0.0
+        assert published_speeds[-1].data == 5.0
+
+        obstacle_cloud = point_cloud2.create_cloud_xyz32(
+            Header(frame_id='lidar_link'),
+            [(2.0, 0.0, 0.0)],
+        )
+        planner._point_cloud_callback(obstacle_cloud)
+        assert published_speeds[-1].data == 2.0
 
         # Progress along the existing path must not cause a replan.
         odometry.pose.pose.position.x = 6.0

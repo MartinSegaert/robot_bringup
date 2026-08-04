@@ -4,6 +4,12 @@ straight_line_global_planner:
     odometry_topic: /rmf/odom
     goal_topic: /goal_pose
     path_topic: /gbplanner_path
+    lidar_topic: /rmf/lidar/points
+    reference_speed_topic: /sdf_nmpc/reference_speed
     frame_id: map
-    segment_length: 1.0
+    segment_length: 100000000000.0
     retrigger_distance: 1.0
+    min_speed: 1.0
+    max_speed: 8.0
+    min_distance: 4.0
+    max_distance: 10.0
