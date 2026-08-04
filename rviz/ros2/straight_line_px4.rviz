@@ -1,17 +1,27 @@
 Panels:
   - Class: rviz_common/Displays
+    Help Height: 70
     Name: Displays
+    Property Tree Widget:
+      Expanded: ~
+      Splitter Ratio: 0.4991568326950073
+    Tree Height: 1156
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
+    Expanded: ~
     Name: Tool Properties
+    Splitter Ratio: 0.5
   - Class: rviz_common/Views
+    Expanded:
+      - /Current View1
     Name: Views
+    Splitter Ratio: 0.5
   - Class: rviz_common/Time
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: LiDAR
 Visualization Manager:
   Class: ""
   Displays:
@@ -20,13 +30,36 @@ Visualization Manager:
       Class: rviz_default_plugins/Grid
       Color: 120; 120; 120
       Enabled: true
+      Line Style:
+        Line Width: 0.029999999329447746
+        Value: Lines
       Name: Grid
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
       Plane: XY
       Plane Cell Count: 100
       Reference Frame: <Fixed Frame>
       Value: true
     - Angle Tolerance: 0
       Class: rviz_default_plugins/Odometry
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: true
+        Position:
+          Alpha: 0.30000001192092896
+          Color: 204; 51; 204
+          Scale: 1
+          Value: true
+        Value: true
       Enabled: true
       Keep: 1
       Name: UAV odometry
@@ -34,8 +67,12 @@ Visualization Manager:
       Shape:
         Alpha: 1
         Axes Length: 0.5
-        Axes Radius: 0.05
+        Axes Radius: 0.05000000074505806
         Color: 255; 25; 0
+        Head Length: 0.30000001192092896
+        Head Radius: 0.10000000149011612
+        Shaft Length: 1
+        Shaft Radius: 0.05000000074505806
         Value: Axes
       Topic:
         Depth: 5
@@ -50,17 +87,21 @@ Visualization Manager:
       Class: rviz_default_plugins/Path
       Color: 0; 255; 0
       Enabled: true
-      Head Diameter: 0.2
-      Head Length: 0.15
-      Length: 0.2
+      Head Diameter: 0.20000000298023224
+      Head Length: 0.15000000596046448
+      Length: 0.20000000298023224
       Line Style: Billboards
-      Line Width: 0.08
+      Line Width: 0.07999999821186066
       Name: Straight global path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
       Pose Color: 0; 255; 0
       Pose Style: Axes
-      Radius: 0.03
-      Shaft Diameter: 0.08
-      Shaft Length: 0.1
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.07999999821186066
+      Shaft Length: 0.10000000149011612
       Topic:
         Depth: 5
         Durability Policy: Transient Local
@@ -69,15 +110,26 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /gbplanner_path
       Value: true
-    - Alpha: 0.7
+    - Alpha: 0.699999988079071
       Buffer Length: 1
       Class: rviz_default_plugins/Path
       Color: 255; 255; 0
       Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
       Line Style: Billboards
-      Line Width: 0.03
+      Line Width: 0.029999999329447746
       Name: NMPC reference horizon
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
       Pose Style: None
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -86,15 +138,26 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /sdf_nmpc/viz/horizon_ref
       Value: true
-    - Alpha: 0.7
+    - Alpha: 0.699999988079071
       Buffer Length: 1
       Class: rviz_default_plugins/Path
       Color: 0; 180; 255
       Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
       Line Style: Billboards
-      Line Width: 0.03
+      Line Width: 0.029999999329447746
       Name: NMPC predicted horizon
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
       Pose Style: None
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -103,11 +166,11 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /sdf_nmpc/viz/horizon_traj
       Value: true
-    - Alpha: 0.35
+    - Alpha: 0.3499999940395355
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
+        Max Value: 13.737279891967773
+        Min Value: -0.7067999839782715
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -116,11 +179,16 @@ Visualization Manager:
       Color Transformer: AxisColor
       Decay Time: 0
       Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
       Name: LiDAR
       Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 2
-      Size (m): 0.02
+      Size (m): 0.019999999552965164
       Style: Points
       Topic:
         Depth: 5
@@ -130,6 +198,7 @@ Visualization Manager:
         Reliability Policy: Best Effort
         Value: /rmf/lidar/points_downsampled
       Use Fixed Frame: true
+      Use rainbow: true
       Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
@@ -144,11 +213,16 @@ Visualization Manager:
       Color Transformer: FlatColor
       Decay Time: 0
       Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
       Name: CBF obstacle cloud
       Position Transformer: XYZ
       Selectable: true
       Size (Pixels): 4
-      Size (m): 0.05
+      Size (m): 0.05000000074505806
       Style: Points
       Topic:
         Depth: 5
@@ -158,6 +232,7 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /cbf_pc_selector/output_pc
       Use Fixed Frame: true
+      Use rainbow: true
       Value: true
     - Alpha: 1
       Angular Arrow Scale: 1
@@ -233,14 +308,41 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 35
+      Distance: 55.07317352294922
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.05999999865889549
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
       Focal Point:
         X: 10
         Y: 0
         Z: 0
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.05000000074505806
+      Invert Z Axis: false
       Name: Current View
-      Pitch: 0.55
+      Near Clip Distance: 0.009999999776482582
+      Pitch: 0.38000020384788513
       Target Frame: map
       Value: Orbit (rviz)
-      Yaw: 3.14
+      Yaw: 3.58500599861145
     Saved: ~
+Window Geometry:
+  Displays:
+    collapsed: false
+  Height: 1371
+  Hide Left Dock: false
+  Hide Right Dock: false
+  QMainWindow State: 000000ff00000000fd00000001000000000000019f00000505fc0200000005fb000000100044006900730070006c006100790073010000003b00000505000000c700fffffffb0000001200530065006c0065006300740069006f006e00000001e5000000c20000005c00fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730000000234000000e50000005c00fffffffb0000000a0056006900650077007300000002a5000001ec000000a000fffffffb0000000800540069006d0065000000042b000001150000003700ffffff0000033a0000050500000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Selection:
+    collapsed: false
+  Time:
+    collapsed: false
+  Tool Properties:
+    collapsed: false
+  Views:
+    collapsed: false
+  Width: 1247
+  X: 1313
+  Y: 32

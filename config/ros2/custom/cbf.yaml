@@ -1,6 +1,6 @@
 composite_cbf:
     ros__parameters:
-        epsilon: 1.5
+        epsilon: 3.0
         gain: 3.0
         power: 0.8
         sigma: 0.1
