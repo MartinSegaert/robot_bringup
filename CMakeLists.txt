@@ -78,6 +78,7 @@ else()
 
     file(GLOB PY_SCRIPTS scripts/ros2/*.py)
     list(REMOVE_ITEM PY_SCRIPTS
+        "${CMAKE_CURRENT_SOURCE_DIR}/scripts/ros2/lidar_proximity.py"
         "${CMAKE_CURRENT_SOURCE_DIR}/scripts/ros2/pointcloud_clearing.py"
     )
     install(PROGRAMS
@@ -85,6 +86,7 @@ else()
         DESTINATION lib/${PROJECT_NAME}
     )
     install(FILES
+        scripts/ros2/lidar_proximity.py
         scripts/ros2/pointcloud_clearing.py
         DESTINATION lib/${PROJECT_NAME}
     )
@@ -95,6 +97,9 @@ else()
     find_package(ament_cmake_pytest REQUIRED)
     ament_add_pytest_test(test_pointcloud_clearing
       test/test_pointcloud_clearing.py
+    )
+    ament_add_pytest_test(test_lidar_proximity
+      test/test_lidar_proximity.py
     )
     endif()
 
