@@ -30,7 +30,7 @@ class UseGbplannerSelector(Node):
             raise ValueError('distance_threshold must be positive')
 
         # Retain the latest decision so late subscribers also receive the
-        # initial safe state before the first point cloud arrives.
+        # default selection before the first point cloud arrives.
         output_qos = QoSProfile(
             depth=1,
             reliability=ReliabilityPolicy.RELIABLE,
@@ -41,7 +41,7 @@ class UseGbplannerSelector(Node):
             PointCloud2, input_topic, self.pointcloud_callback, 10
         )
 
-        self.publisher.publish(Bool(data=False))
+        self.publisher.publish(Bool(data=True))
         self.get_logger().info(
             f'Watching {input_topic} within {self.distance_threshold:.2f} m; '
             f'publishing the decision on {output_topic}'

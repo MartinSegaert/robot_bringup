@@ -1,0 +1,6 @@
+use_gbplanner_selector:
+  ros__parameters:
+    use_sim_time: true
+    input_topic: /rmf/lidar/points_downsampled
+    output_topic: /use_gbplanner
+    distance_threshold: 10.0
