@@ -9,7 +9,7 @@
   <arg name="planner_path_topic" default="/gbplanner_path" />
   <arg name="planner_start_service"
        default="/planner_control_interface/std_srvs/automatic_planning" />
-  <arg name="reached_distance" default="2.0" />
+  <arg name="reached_distance" default="2.3" />
 
   <node pkg="robot_bringup"
         type="waypoint_follower.py"

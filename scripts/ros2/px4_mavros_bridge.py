@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""Connect the stack's acceleration/odometry topics to PX4 through MAVROS.
+"""Connect the stack's acceleration/velocity and odometry topics to MAVROS.
 
-Acceleration commands are kept alive at ``setpoint_rate_hz`` while fresh.
+Commands are selected by ``/use_gbplanner`` and kept alive at
+``setpoint_rate_hz`` while fresh. GBPlanner uses acceleration control; the
+fallback waypoint controller uses velocity control.
 Publishing stops after ``setpoint_timeout_s`` so PX4 can detect loss of the
 offboard command stream instead of flying indefinitely on a stale command.
 """
@@ -16,13 +18,24 @@ import xml.etree.ElementTree as ET
 import rclpy
 from geometry_msgs.msg import TransformStamped
 from geometry_msgs.msg import Twist
+from gbplanner_resume_gate import (
+    GbplannerResumeGate,
+    controller_hold_needs_relatch,
+)
 from mavros_msgs.msg import PositionTarget
 from mavros_msgs.msg import State
 from mavros_msgs.srv import CommandBool
 from mavros_msgs.srv import SetMode
 from nav_msgs.msg import Odometry
+from nav_msgs.msg import Path as NavPath
 from rclpy.node import Node
-from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
+from rclpy.qos import (
+    DurabilityPolicy,
+    HistoryPolicy,
+    QoSProfile,
+    ReliabilityPolicy,
+)
+from std_msgs.msg import Bool
 from std_srvs.srv import Trigger
 from tf2_ros import TransformBroadcaster
 
@@ -31,6 +44,13 @@ _SENSOR_QOS = QoSProfile(
     reliability=ReliabilityPolicy.BEST_EFFORT,
     history=HistoryPolicy.KEEP_LAST,
     depth=10,
+)
+
+_SELECTOR_QOS = QoSProfile(
+    reliability=ReliabilityPolicy.RELIABLE,
+    durability=DurabilityPolicy.TRANSIENT_LOCAL,
+    history=HistoryPolicy.KEEP_LAST,
+    depth=1,
 )
 
 
@@ -134,7 +154,11 @@ class Px4MavrosBridge(Node):
     def __init__(self) -> None:
         super().__init__('px4_mavros_bridge')
 
-        self.declare_parameter('accel_input_topic', '/sdf_nmpc/cmd/acc')
+        self.declare_parameter('accel_input_topic', '/rmf/cmd/acc')
+        self.declare_parameter('velocity_input_topic', '/rmf/cmd/vel')
+        self.declare_parameter('use_gbplanner_topic', '/use_gbplanner')
+        self.declare_parameter('gbplanner_path_topic', '/gbplanner_path')
+        self.declare_parameter('gbplanner_resume_settle_time_s', 0.1)
         self.declare_parameter('controller_ready_topic', '')
         self.declare_parameter('controller_hold_service', '')
         self.declare_parameter('setpoint_output_topic', '/mavros/setpoint_raw/local')
@@ -161,6 +185,12 @@ class Px4MavrosBridge(Node):
         self.declare_parameter('mode_request_period_s', 2.0)
 
         accel_topic = self.get_parameter('accel_input_topic').value
+        velocity_topic = self.get_parameter('velocity_input_topic').value
+        use_gbplanner_topic = self.get_parameter('use_gbplanner_topic').value
+        gbplanner_path_topic = self.get_parameter('gbplanner_path_topic').value
+        gbplanner_resume_settle_time_s = float(
+            self.get_parameter('gbplanner_resume_settle_time_s').value
+        )
         controller_ready_topic = str(
             self.get_parameter('controller_ready_topic').value
         ).strip()
@@ -222,7 +252,25 @@ class Px4MavrosBridge(Node):
         self._setpoint_pub = self.create_publisher(PositionTarget, setpoint_topic, 10)
         self._odom_pub = self.create_publisher(Odometry, odom_topic, 10)
         self._tf_broadcaster = TransformBroadcaster(self) if self._publish_tf else None
+        self._use_gbplanner = True
+        self._gbplanner_resume_gate = GbplannerResumeGate(
+            gbplanner_resume_settle_time_s
+        )
+        self._gbplanner_resume_in_progress = False
         self.create_subscription(Twist, accel_topic, self._accel_callback, 10)
+        self.create_subscription(Twist, velocity_topic, self._velocity_callback, 10)
+        self.create_subscription(
+            Bool,
+            use_gbplanner_topic,
+            self._use_gbplanner_callback,
+            _SELECTOR_QOS,
+        )
+        self.create_subscription(
+            NavPath,
+            gbplanner_path_topic,
+            self._gbplanner_path_callback,
+            10,
+        )
         self._separate_controller_ready_topic = bool(
             controller_ready_topic and controller_ready_topic != accel_topic
         )
@@ -263,8 +311,15 @@ class Px4MavrosBridge(Node):
         self.create_timer(1.0 / rate_hz, self._publish_setpoint)
 
         self.get_logger().info(
-            f'Acceleration {accel_topic} -> {setpoint_topic}; '
+            f'Acceleration {accel_topic} when {use_gbplanner_topic}=true; '
+            f'velocity {velocity_topic} when {use_gbplanner_topic}=false; '
+            f'setpoints -> {setpoint_topic}; '
             f'odometry {mavros_odom_topic} -> {odom_topic}'
+        )
+        self.get_logger().info(
+            f'GBPlanner resume interlock waits for a new path on '
+            f'{gbplanner_path_topic} and then '
+            f'{gbplanner_resume_settle_time_s:.3f} s'
         )
         if self._separate_controller_ready_topic:
             self.get_logger().info(
@@ -291,6 +346,19 @@ class Px4MavrosBridge(Node):
             )
 
     def _accel_callback(self, command: Twist) -> None:
+        if not self._use_gbplanner:
+            return
+
+        now_ns = self.get_clock().now().nanoseconds
+        was_waiting = self._gbplanner_resume_gate.waiting
+        if not self._gbplanner_resume_gate.command_allowed(now_ns):
+            return
+        if was_waiting:
+            self.get_logger().info(
+                'Fresh GBPlanner path and controller settling time observed; '
+                'enabling acceleration commands'
+            )
+
         target = PositionTarget()
         target.header.frame_id = self._body_frame_id
         target.coordinate_frame = PositionTarget.FRAME_BODY_NED
@@ -309,12 +377,83 @@ class Px4MavrosBridge(Node):
         target.yaw_rate = command.angular.z
 
         self._last_setpoint = target
-        self._last_setpoint_ns = self.get_clock().now().nanoseconds
+        self._last_setpoint_ns = now_ns
         if not self._separate_controller_ready_topic:
             self._last_controller_command_ns = self._last_setpoint_ns
 
+    def _velocity_callback(self, command: Twist) -> None:
+        if self._use_gbplanner:
+            return
+
+        target = PositionTarget()
+        target.header.frame_id = self._body_frame_id
+        target.coordinate_frame = PositionTarget.FRAME_BODY_NED
+        target.type_mask = (
+            PositionTarget.IGNORE_PX
+            | PositionTarget.IGNORE_PY
+            | PositionTarget.IGNORE_PZ
+            | PositionTarget.IGNORE_AFX
+            | PositionTarget.IGNORE_AFY
+            | PositionTarget.IGNORE_AFZ
+            | PositionTarget.IGNORE_YAW
+        )
+        target.velocity.x = command.linear.x
+        target.velocity.y = command.linear.y
+        target.velocity.z = command.linear.z
+        target.yaw_rate = command.angular.z
+
+        self._last_setpoint = target
+        self._last_setpoint_ns = self.get_clock().now().nanoseconds
+        # The optional readiness topic belongs to the acceleration controller.
+        # A velocity message is itself proof that the fallback controller is
+        # ready, so it must refresh both timestamps.
+        self._last_controller_command_ns = self._last_setpoint_ns
+
+    def _use_gbplanner_callback(self, selection: Bool) -> None:
+        use_gbplanner = bool(selection.data)
+        if use_gbplanner == self._use_gbplanner:
+            return
+
+        self._use_gbplanner = use_gbplanner
+        # Never replay a cached command encoded for the previously active
+        # control mode. Wait for a fresh command from the selected controller.
+        self._last_setpoint = None
+        self._last_setpoint_ns = None
+        self._last_controller_command_ns = None
+        if use_gbplanner:
+            self._gbplanner_resume_in_progress = True
+            self._gbplanner_resume_gate.start(
+                self.get_clock().now().nanoseconds
+            )
+            self.get_logger().info(
+                'Waiting for a newly planned GBPlanner path before accepting '
+                'acceleration commands'
+            )
+        else:
+            self._gbplanner_resume_in_progress = False
+            self._gbplanner_resume_gate.cancel()
+        mode = 'acceleration' if use_gbplanner else 'velocity'
+        self.get_logger().info(f'Switched to {mode} control')
+
+    def _gbplanner_path_callback(self, path: NavPath) -> None:
+        if not self._use_gbplanner or not path.poses:
+            return
+
+        path_stamp_ns = (
+            int(path.header.stamp.sec) * 1_000_000_000
+            + int(path.header.stamp.nanosec)
+        )
+        received_ns = self.get_clock().now().nanoseconds
+        if self._gbplanner_resume_gate.observe_path(path_stamp_ns, received_ns):
+            self.get_logger().info(
+                'Observed a GBPlanner path generated after the mode transition; '
+                'waiting for fresh controller output'
+            )
+
     def _controller_ready_callback(self, _command: Twist) -> None:
         """Record a real upstream command independently of CBF fallback output."""
+        if not self._use_gbplanner or self._gbplanner_resume_gate.waiting:
+            return
         self._last_controller_command_ns = self.get_clock().now().nanoseconds
 
     def _publish_setpoint(self) -> None:
@@ -332,6 +471,13 @@ class Px4MavrosBridge(Node):
             setpoint_age_s <= self._timeout_s
             and controller_age_s <= self._timeout_s
         )
+
+        if self._gbplanner_resume_in_progress and command_is_fresh:
+            # The complete selected-controller stream is ready. Preserve the
+            # existing OFFBOARD hold latch instead of calling /sdf_nmpc/hover,
+            # whose `wps` publication would overwrite /gbplanner_path.
+            self._controller_hold_ready = True
+            self._gbplanner_resume_in_progress = False
 
         # AUTO.TAKEOFF and arming do not depend on the NMPC command stream.
         # OFFBOARD handover does: PX4 must see fresh setpoints before accepting
@@ -423,7 +569,11 @@ class Px4MavrosBridge(Node):
         if not self._has_odom or not self._state.connected:
             return
 
-        if not offboard_command_ready and self._controller_hold_service:
+        if controller_hold_needs_relatch(
+            command_is_fresh=offboard_command_ready,
+            hold_service_configured=bool(self._controller_hold_service),
+            gbplanner_resume_in_progress=self._gbplanner_resume_in_progress,
+        ):
             # A controller restart must latch a new hold pose before it can
             # regain OFFBOARD control.
             self._controller_hold_ready = False

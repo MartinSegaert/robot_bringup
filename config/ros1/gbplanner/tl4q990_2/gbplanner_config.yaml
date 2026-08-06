@@ -24,7 +24,7 @@ SensorParams:
     type:           kLidar
     max_range:      15
     center_offset:  [0.1, 0, -0.18]
-    rotations:      [0, -3.5, 0]
+    rotations:      [0, -3.66, 0]
     fov:            [rad(2*pi), rad(62*pi/180)]
     resolution:     [rad(10.0*pi/180), rad(10.0*pi/180)]
     frontier_percentage_threshold: 0.1 # 0.005

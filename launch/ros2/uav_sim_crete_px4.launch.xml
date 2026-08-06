@@ -71,8 +71,8 @@
         <param name="output_topic" value="/rmf/lidar/points_downsampled"/>
         <param name="skip_points" value="1"/>
         <param name="allow_clear" value="true"/>
-        <param name="max_ray_length_m" value="20.0"/>
-        <param name="clearing_ray_margin_m" value="0.1"/>
+        <param name="max_ray_length_m" value="40.0"/>
+        <param name="clearing_ray_margin_m" value="0.8"/>
         <param name="horizontal_min_angle" value="$(var lidar_horizontal_min_angle)"/>
         <param name="horizontal_max_angle" value="$(var lidar_horizontal_max_angle)"/>
         <param name="vertical_min_angle" value="$(var lidar_vertical_min_angle)"/>

@@ -5,6 +5,13 @@ topics:
     queue_size: 10
     direction: ros1_to_ros2
 
+  # The waypoint velocity commander runs in ROS 2, while goals are published
+  # by the ROS 1 GBPlanner UI / waypoint follower.
+  - topic: /move_base_simple/goal
+    type: geometry_msgs/msg/PoseStamped
+    queue_size: 1
+    direction: ros1_to_ros2
+
   - service: /sdf_nmpc/takeoff
     type: std_srvs/srv/Trigger
     queue_size: 10
@@ -94,5 +101,10 @@ topics:
 
   - topic: /composite_cbf/output_viz
     type: geometry_msgs/msg/TwistStamped
+    queue_size: 10
+    direction: ros2_to_ros1
+
+  - topic: /use_gbplanner
+    type: std_msgs/msg/Bool
     queue_size: 10
     direction: ros2_to_ros1

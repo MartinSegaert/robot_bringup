@@ -1,5 +1,5 @@
 frame_id: world
-inter_waypoint_delay: 1.0
+inter_waypoint_delay: 2.0
 retry_delay: 2.0
 max_retries: 0
 waypoints:
@@ -9,31 +9,41 @@ waypoints:
     z: 6.0
     yaw_deg: 0.0
   - name: waypoint_2
-    x: 77.5
-    y: 37.5
-    z: 6.0
-    yaw_deg: 0.0
-  - name: waypoint_3
-    x: 110.0
-    y: 37.5
-    z: 21.0
-    yaw_deg: 0.0
-  - name: waypoint_4
-    x: 110.0
-    y: -37.5
-    z: 21.0
-    yaw_deg: -90.0
-  - name: waypoint_5
-    x: 35.0
-    y: -37.5
-    z: 13.0
-    yaw_deg: 180.0
-  - name: waypoint_6
     x: 35.0
     y: 37.5
     z: 13.0
     yaw_deg: 90.0
+  - name: waypoint_3
+    x: 35.0
+    y: 67.5
+    z: 13.0
+    yaw_deg: 90.0
+  - name: waypoint_4
+    x: 110.0
+    y: 72.5
+    z: 21.0
+    yaw_deg: 0.0
+  - name: waypoint_5
+    x: 110.0
+    y: 37.5
+    z: 21.0
+    yaw_deg: 0.0
+  - name: waypoint_6
+    x: 110.0
+    y: -37.5
+    z: 21.0
+    yaw_deg: -90.0
   - name: waypoint_7
+    x: 35.0
+    y: -37.5
+    z: 13.0
+    yaw_deg: 180.0
+  - name: waypoint_8
+    x: 35.0
+    y: 37.5
+    z: 13.0
+    yaw_deg: 90.0
+  - name: waypoint_9
     x: 0.0
     y: 0.0
     z: 6.0

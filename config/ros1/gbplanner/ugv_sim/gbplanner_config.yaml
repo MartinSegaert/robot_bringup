@@ -31,7 +31,7 @@ SensorParams:
     frontier_percentage_threshold: 0.05
   CamF:
     type:           kLidar
-    max_range:      3.5
+    max_range:      3.66
     center_offset:  [0.0, 0.0, 0.0]
     rotations:      [0.0, 0.0, 0.0]
     fov:            [rad(100*pi/180), rad(60*pi/180)]

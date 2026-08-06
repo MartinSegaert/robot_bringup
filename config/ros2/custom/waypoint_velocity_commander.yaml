@@ -1,0 +1,24 @@
+waypoint_velocity_commander:
+  ros__parameters:
+    # Interfaces
+    waypoint_topic: /move_base_simple/goal       # geometry_msgs/PoseStamped
+    odometry_topic: /rmf/odom               # nav_msgs/Odometry
+    obstacle_topic: /rmf/lidar/points_downsampled  # sensor_msgs/PointCloud2
+    cmd_vel_topic: /rmf/cmd/vel                  # geometry_msgs/Twist
+    use_gbplanner_topic: /use_gbplanner          # std_msgs/Bool
+
+    # Controller
+    publish_rate: 20.0                       # Hz
+    max_acceleration: 1.0                   # m/s^2, acceleration and deceleration
+    max_yaw_rate: 1.0                        # rad/s
+    yaw_gain: 1.5                            # (rad/s)/rad
+    min_speed: 2.0                           # m/s, obstacle-limited floor
+    max_speed: 4.0                           # m/s
+    waypoint_arrival_speed: 1.0              # m/s, speed at/below the arrival radius
+    waypoint_arrival_distance: 5.0           # m, radius where arrival speed is reached
+    waypoint_tolerance: 1.0                 # m, command zero inside this radius
+    body_frame_output: true                  # false publishes world-frame linear velocity
+
+    # Obstacle speed interpolation
+    min_distance: 12.0                        # m: at/below this, allow min_speed
+    max_distance: 20.0                        # m: at/above this, allow max_speed
