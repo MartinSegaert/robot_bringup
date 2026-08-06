@@ -19,6 +19,8 @@
   <depend condition="$ROS_VERSION == 1">std_srvs</depend>
 
   <depend condition="$ROS_VERSION == 2">rclpy</depend>
+  <depend condition="$ROS_VERSION == 2">geometry_msgs</depend>
+  <depend condition="$ROS_VERSION == 2">nav_msgs</depend>
   <depend condition="$ROS_VERSION == 2">sensor_msgs</depend>
   <exec_depend condition="$ROS_VERSION == 2">sensor_msgs_py</exec_depend>
   <depend condition="$ROS_VERSION == 2">std_msgs</depend>
