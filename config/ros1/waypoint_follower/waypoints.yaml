@@ -15,12 +15,12 @@ waypoints:
     yaw_deg: 90.0
   - name: waypoint_3
     x: 35.0
-    y: 7.5
+    y: 67.5
     z: 13.0
     yaw_deg: 90.0
   - name: waypoint_4
     x: 110.0
-    y: 2.5
+    y: 72.5
     z: 21.0
     yaw_deg: 0.0
   - name: waypoint_5

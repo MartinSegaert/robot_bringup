@@ -18,11 +18,13 @@ import xml.etree.ElementTree as ET
 import rclpy
 from geometry_msgs.msg import TransformStamped
 from geometry_msgs.msg import Twist
+from gbplanner_resume_gate import GbplannerResumeGate
 from mavros_msgs.msg import PositionTarget
 from mavros_msgs.msg import State
 from mavros_msgs.srv import CommandBool
 from mavros_msgs.srv import SetMode
 from nav_msgs.msg import Odometry
+from nav_msgs.msg import Path as NavPath
 from rclpy.node import Node
 from rclpy.qos import (
     DurabilityPolicy,
@@ -152,6 +154,8 @@ class Px4MavrosBridge(Node):
         self.declare_parameter('accel_input_topic', '/rmf/cmd/acc')
         self.declare_parameter('velocity_input_topic', '/rmf/cmd/vel')
         self.declare_parameter('use_gbplanner_topic', '/use_gbplanner')
+        self.declare_parameter('gbplanner_path_topic', '/gbplanner_path')
+        self.declare_parameter('gbplanner_resume_settle_time_s', 0.1)
         self.declare_parameter('controller_ready_topic', '')
         self.declare_parameter('controller_hold_service', '')
         self.declare_parameter('setpoint_output_topic', '/mavros/setpoint_raw/local')
@@ -180,6 +184,10 @@ class Px4MavrosBridge(Node):
         accel_topic = self.get_parameter('accel_input_topic').value
         velocity_topic = self.get_parameter('velocity_input_topic').value
         use_gbplanner_topic = self.get_parameter('use_gbplanner_topic').value
+        gbplanner_path_topic = self.get_parameter('gbplanner_path_topic').value
+        gbplanner_resume_settle_time_s = float(
+            self.get_parameter('gbplanner_resume_settle_time_s').value
+        )
         controller_ready_topic = str(
             self.get_parameter('controller_ready_topic').value
         ).strip()
@@ -242,6 +250,9 @@ class Px4MavrosBridge(Node):
         self._odom_pub = self.create_publisher(Odometry, odom_topic, 10)
         self._tf_broadcaster = TransformBroadcaster(self) if self._publish_tf else None
         self._use_gbplanner = True
+        self._gbplanner_resume_gate = GbplannerResumeGate(
+            gbplanner_resume_settle_time_s
+        )
         self.create_subscription(Twist, accel_topic, self._accel_callback, 10)
         self.create_subscription(Twist, velocity_topic, self._velocity_callback, 10)
         self.create_subscription(
@@ -249,6 +260,12 @@ class Px4MavrosBridge(Node):
             use_gbplanner_topic,
             self._use_gbplanner_callback,
             _SELECTOR_QOS,
+        )
+        self.create_subscription(
+            NavPath,
+            gbplanner_path_topic,
+            self._gbplanner_path_callback,
+            10,
         )
         self._separate_controller_ready_topic = bool(
             controller_ready_topic and controller_ready_topic != accel_topic
@@ -295,6 +312,11 @@ class Px4MavrosBridge(Node):
             f'setpoints -> {setpoint_topic}; '
             f'odometry {mavros_odom_topic} -> {odom_topic}'
         )
+        self.get_logger().info(
+            f'GBPlanner resume interlock waits for a new path on '
+            f'{gbplanner_path_topic} and then '
+            f'{gbplanner_resume_settle_time_s:.3f} s'
+        )
         if self._separate_controller_ready_topic:
             self.get_logger().info(
                 f'OFFBOARD readiness requires fresh upstream commands on '
@@ -323,6 +345,16 @@ class Px4MavrosBridge(Node):
         if not self._use_gbplanner:
             return
 
+        now_ns = self.get_clock().now().nanoseconds
+        was_waiting = self._gbplanner_resume_gate.waiting
+        if not self._gbplanner_resume_gate.command_allowed(now_ns):
+            return
+        if was_waiting:
+            self.get_logger().info(
+                'Fresh GBPlanner path and controller settling time observed; '
+                'enabling acceleration commands'
+            )
+
         target = PositionTarget()
         target.header.frame_id = self._body_frame_id
         target.coordinate_frame = PositionTarget.FRAME_BODY_NED
@@ -341,7 +373,7 @@ class Px4MavrosBridge(Node):
         target.yaw_rate = command.angular.z
 
         self._last_setpoint = target
-        self._last_setpoint_ns = self.get_clock().now().nanoseconds
+        self._last_setpoint_ns = now_ns
         if not self._separate_controller_ready_topic:
             self._last_controller_command_ns = self._last_setpoint_ns
 
@@ -384,11 +416,38 @@ class Px4MavrosBridge(Node):
         self._last_setpoint = None
         self._last_setpoint_ns = None
         self._last_controller_command_ns = None
+        if use_gbplanner:
+            self._gbplanner_resume_gate.start(
+                self.get_clock().now().nanoseconds
+            )
+            self.get_logger().info(
+                'Waiting for a newly planned GBPlanner path before accepting '
+                'acceleration commands'
+            )
+        else:
+            self._gbplanner_resume_gate.cancel()
         mode = 'acceleration' if use_gbplanner else 'velocity'
         self.get_logger().info(f'Switched to {mode} control')
 
+    def _gbplanner_path_callback(self, path: NavPath) -> None:
+        if not self._use_gbplanner or not path.poses:
+            return
+
+        path_stamp_ns = (
+            int(path.header.stamp.sec) * 1_000_000_000
+            + int(path.header.stamp.nanosec)
+        )
+        received_ns = self.get_clock().now().nanoseconds
+        if self._gbplanner_resume_gate.observe_path(path_stamp_ns, received_ns):
+            self.get_logger().info(
+                'Observed a GBPlanner path generated after the mode transition; '
+                'waiting for fresh controller output'
+            )
+
     def _controller_ready_callback(self, _command: Twist) -> None:
         """Record a real upstream command independently of CBF fallback output."""
+        if not self._use_gbplanner or self._gbplanner_resume_gate.waiting:
+            return
         self._last_controller_command_ns = self.get_clock().now().nanoseconds
 
     def _publish_setpoint(self) -> None:

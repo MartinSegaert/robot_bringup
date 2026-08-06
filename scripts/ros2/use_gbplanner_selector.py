@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
-"""Select GBPlanner when a lidar return is close to the sensor origin."""
+"""Select GBPlanner when a lidar return is close to the sensor origin.
+
+Different distance thresholds are used for each transition to provide
+hysteresis and prevent repeated switching near a single boundary.
+"""
 
 from lidar_proximity import DurationThresholdFilter, has_point_within_distance
 import rclpy
@@ -19,19 +23,41 @@ class UseGbplannerSelector(Node):
             'input_topic', '/rmf/lidar/points_downsampled'
         )
         self.declare_parameter('output_topic', '/use_gbplanner')
-        self.declare_parameter('distance_threshold', 5.0)
+        self.declare_parameter('distance_threshold_enable_gbplanner', 5.0)
+        self.declare_parameter('distance_threshold_disable_gbplanner', 6.0)
         self.declare_parameter('duration_threshold', 1.0)
 
         input_topic = self.get_parameter('input_topic').value
         output_topic = self.get_parameter('output_topic').value
-        self.distance_threshold = float(
-            self.get_parameter('distance_threshold').value
+        self.distance_threshold_enable_gbplanner = float(
+            self.get_parameter(
+                'distance_threshold_enable_gbplanner'
+            ).value
+        )
+        self.distance_threshold_disable_gbplanner = float(
+            self.get_parameter(
+                'distance_threshold_disable_gbplanner'
+            ).value
         )
         self.duration_threshold = float(
             self.get_parameter('duration_threshold').value
         )
-        if self.distance_threshold <= 0.0:
-            raise ValueError('distance_threshold must be positive')
+        if self.distance_threshold_enable_gbplanner <= 0.0:
+            raise ValueError(
+                'distance_threshold_enable_gbplanner must be positive'
+            )
+        if self.distance_threshold_disable_gbplanner <= 0.0:
+            raise ValueError(
+                'distance_threshold_disable_gbplanner must be positive'
+            )
+        if (
+            self.distance_threshold_enable_gbplanner
+            >= self.distance_threshold_disable_gbplanner
+        ):
+            raise ValueError(
+                'distance_threshold_enable_gbplanner must be less than '
+                'distance_threshold_disable_gbplanner'
+            )
         self.state_filter = DurationThresholdFilter(
             initial_value=True,
             duration_threshold=self.duration_threshold,
@@ -51,7 +77,9 @@ class UseGbplannerSelector(Node):
 
         self.publisher.publish(Bool(data=True))
         self.get_logger().info(
-            f'Watching {input_topic} within {self.distance_threshold:.2f} m; '
+            f'Watching {input_topic}; false -> true within '
+            f'{self.distance_threshold_enable_gbplanner:.2f} m, true -> false '
+            f'beyond {self.distance_threshold_disable_gbplanner:.2f} m; '
             f'changes must persist for {self.duration_threshold:.2f} s; '
             f'publishing the decision on {output_topic}'
         )
@@ -60,10 +88,14 @@ class UseGbplannerSelector(Node):
         points = pc2.read_points(
             message, field_names=('x', 'y', 'z'), skip_nans=False
         )
-        observed_use_gbplanner = has_point_within_distance(
-            points, self.distance_threshold
-        )
         previous_value = self.state_filter.value
+        if previous_value:
+            distance_threshold = self.distance_threshold_disable_gbplanner
+        else:
+            distance_threshold = self.distance_threshold_enable_gbplanner
+        observed_use_gbplanner = has_point_within_distance(
+            points, distance_threshold
+        )
         use_gbplanner = self.state_filter.update(
             observed_use_gbplanner,
             self.get_clock().now().nanoseconds,

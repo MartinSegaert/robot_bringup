@@ -79,6 +79,7 @@ else()
     file(GLOB PY_SCRIPTS scripts/ros2/*.py)
     list(REMOVE_ITEM PY_SCRIPTS
         "${CMAKE_CURRENT_SOURCE_DIR}/scripts/ros2/lidar_proximity.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/scripts/ros2/gbplanner_resume_gate.py"
         "${CMAKE_CURRENT_SOURCE_DIR}/scripts/ros2/pointcloud_clearing.py"
         "${CMAKE_CURRENT_SOURCE_DIR}/scripts/ros2/waypoint_velocity_control.py"
     )
@@ -88,6 +89,7 @@ else()
     )
     install(FILES
         scripts/ros2/lidar_proximity.py
+        scripts/ros2/gbplanner_resume_gate.py
         scripts/ros2/pointcloud_clearing.py
         scripts/ros2/waypoint_velocity_control.py
         DESTINATION lib/${PROJECT_NAME}
@@ -102,6 +104,9 @@ else()
     )
     ament_add_pytest_test(test_lidar_proximity
       test/test_lidar_proximity.py
+    )
+    ament_add_pytest_test(test_gbplanner_resume_gate
+      test/test_gbplanner_resume_gate.py
     )
     ament_add_pytest_test(test_waypoint_velocity_control
       test/test_waypoint_velocity_control.py
