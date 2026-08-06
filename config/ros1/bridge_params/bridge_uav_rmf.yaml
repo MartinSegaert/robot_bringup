@@ -96,3 +96,8 @@ topics:
     type: geometry_msgs/msg/TwistStamped
     queue_size: 10
     direction: ros2_to_ros1
+
+  - topic: /use_gbplanner
+    type: std_msgs/Bool
+    queue_size: 10
+    direction: ros2_to_ros1
