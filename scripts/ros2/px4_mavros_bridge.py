@@ -18,7 +18,10 @@ import xml.etree.ElementTree as ET
 import rclpy
 from geometry_msgs.msg import TransformStamped
 from geometry_msgs.msg import Twist
-from gbplanner_resume_gate import GbplannerResumeGate
+from gbplanner_resume_gate import (
+    GbplannerResumeGate,
+    controller_hold_needs_relatch,
+)
 from mavros_msgs.msg import PositionTarget
 from mavros_msgs.msg import State
 from mavros_msgs.srv import CommandBool
@@ -253,6 +256,7 @@ class Px4MavrosBridge(Node):
         self._gbplanner_resume_gate = GbplannerResumeGate(
             gbplanner_resume_settle_time_s
         )
+        self._gbplanner_resume_in_progress = False
         self.create_subscription(Twist, accel_topic, self._accel_callback, 10)
         self.create_subscription(Twist, velocity_topic, self._velocity_callback, 10)
         self.create_subscription(
@@ -417,6 +421,7 @@ class Px4MavrosBridge(Node):
         self._last_setpoint_ns = None
         self._last_controller_command_ns = None
         if use_gbplanner:
+            self._gbplanner_resume_in_progress = True
             self._gbplanner_resume_gate.start(
                 self.get_clock().now().nanoseconds
             )
@@ -425,6 +430,7 @@ class Px4MavrosBridge(Node):
                 'acceleration commands'
             )
         else:
+            self._gbplanner_resume_in_progress = False
             self._gbplanner_resume_gate.cancel()
         mode = 'acceleration' if use_gbplanner else 'velocity'
         self.get_logger().info(f'Switched to {mode} control')
@@ -465,6 +471,13 @@ class Px4MavrosBridge(Node):
             setpoint_age_s <= self._timeout_s
             and controller_age_s <= self._timeout_s
         )
+
+        if self._gbplanner_resume_in_progress and command_is_fresh:
+            # The complete selected-controller stream is ready. Preserve the
+            # existing OFFBOARD hold latch instead of calling /sdf_nmpc/hover,
+            # whose `wps` publication would overwrite /gbplanner_path.
+            self._controller_hold_ready = True
+            self._gbplanner_resume_in_progress = False
 
         # AUTO.TAKEOFF and arming do not depend on the NMPC command stream.
         # OFFBOARD handover does: PX4 must see fresh setpoints before accepting
@@ -556,7 +569,11 @@ class Px4MavrosBridge(Node):
         if not self._has_odom or not self._state.connected:
             return
 
-        if not offboard_command_ready and self._controller_hold_service:
+        if controller_hold_needs_relatch(
+            command_is_fresh=offboard_command_ready,
+            hold_service_configured=bool(self._controller_hold_service),
+            gbplanner_resume_in_progress=self._gbplanner_resume_in_progress,
+        ):
             # A controller restart must latch a new hold pose before it can
             # regain OFFBOARD control.
             self._controller_hold_ready = False

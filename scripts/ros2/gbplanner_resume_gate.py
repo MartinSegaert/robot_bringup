@@ -40,3 +40,23 @@ class GbplannerResumeGate:
             return False
         self.cancel()
         return True
+
+
+def controller_hold_needs_relatch(
+    *,
+    command_is_fresh,
+    hold_service_configured,
+    gbplanner_resume_in_progress,
+):
+    """Return whether command loss should invalidate the controller hold.
+
+    A velocity-to-GBPlanner handover intentionally clears the bridge's command
+    cache while it waits for a newly planned path. That expected gap is not a
+    controller restart and must not cause the hover service to overwrite the
+    new GBPlanner path.
+    """
+    return (
+        hold_service_configured
+        and not command_is_fresh
+        and not gbplanner_resume_in_progress
+    )
