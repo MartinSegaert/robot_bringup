@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""Connect the stack's acceleration/odometry topics to PX4 through MAVROS.
+"""Connect the stack's acceleration/velocity and odometry topics to MAVROS.
 
-Acceleration commands are kept alive at ``setpoint_rate_hz`` while fresh.
+Commands are selected by ``/use_gbplanner`` and kept alive at
+``setpoint_rate_hz`` while fresh. GBPlanner uses acceleration control; the
+fallback waypoint controller uses velocity control.
 Publishing stops after ``setpoint_timeout_s`` so PX4 can detect loss of the
 offboard command stream instead of flying indefinitely on a stale command.
 """
@@ -22,7 +24,13 @@ from mavros_msgs.srv import CommandBool
 from mavros_msgs.srv import SetMode
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
-from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
+from rclpy.qos import (
+    DurabilityPolicy,
+    HistoryPolicy,
+    QoSProfile,
+    ReliabilityPolicy,
+)
+from std_msgs.msg import Bool
 from std_srvs.srv import Trigger
 from tf2_ros import TransformBroadcaster
 
@@ -31,6 +39,13 @@ _SENSOR_QOS = QoSProfile(
     reliability=ReliabilityPolicy.BEST_EFFORT,
     history=HistoryPolicy.KEEP_LAST,
     depth=10,
+)
+
+_SELECTOR_QOS = QoSProfile(
+    reliability=ReliabilityPolicy.RELIABLE,
+    durability=DurabilityPolicy.TRANSIENT_LOCAL,
+    history=HistoryPolicy.KEEP_LAST,
+    depth=1,
 )
 
 
@@ -134,7 +149,9 @@ class Px4MavrosBridge(Node):
     def __init__(self) -> None:
         super().__init__('px4_mavros_bridge')
 
-        self.declare_parameter('accel_input_topic', '/sdf_nmpc/cmd/acc')
+        self.declare_parameter('accel_input_topic', '/rmf/cmd/acc')
+        self.declare_parameter('velocity_input_topic', '/rmf/cmd/vel')
+        self.declare_parameter('use_gbplanner_topic', '/use_gbplanner')
         self.declare_parameter('controller_ready_topic', '')
         self.declare_parameter('controller_hold_service', '')
         self.declare_parameter('setpoint_output_topic', '/mavros/setpoint_raw/local')
@@ -161,6 +178,8 @@ class Px4MavrosBridge(Node):
         self.declare_parameter('mode_request_period_s', 2.0)
 
         accel_topic = self.get_parameter('accel_input_topic').value
+        velocity_topic = self.get_parameter('velocity_input_topic').value
+        use_gbplanner_topic = self.get_parameter('use_gbplanner_topic').value
         controller_ready_topic = str(
             self.get_parameter('controller_ready_topic').value
         ).strip()
@@ -222,7 +241,15 @@ class Px4MavrosBridge(Node):
         self._setpoint_pub = self.create_publisher(PositionTarget, setpoint_topic, 10)
         self._odom_pub = self.create_publisher(Odometry, odom_topic, 10)
         self._tf_broadcaster = TransformBroadcaster(self) if self._publish_tf else None
+        self._use_gbplanner = True
         self.create_subscription(Twist, accel_topic, self._accel_callback, 10)
+        self.create_subscription(Twist, velocity_topic, self._velocity_callback, 10)
+        self.create_subscription(
+            Bool,
+            use_gbplanner_topic,
+            self._use_gbplanner_callback,
+            _SELECTOR_QOS,
+        )
         self._separate_controller_ready_topic = bool(
             controller_ready_topic and controller_ready_topic != accel_topic
         )
@@ -263,7 +290,9 @@ class Px4MavrosBridge(Node):
         self.create_timer(1.0 / rate_hz, self._publish_setpoint)
 
         self.get_logger().info(
-            f'Acceleration {accel_topic} -> {setpoint_topic}; '
+            f'Acceleration {accel_topic} when {use_gbplanner_topic}=true; '
+            f'velocity {velocity_topic} when {use_gbplanner_topic}=false; '
+            f'setpoints -> {setpoint_topic}; '
             f'odometry {mavros_odom_topic} -> {odom_topic}'
         )
         if self._separate_controller_ready_topic:
@@ -291,6 +320,9 @@ class Px4MavrosBridge(Node):
             )
 
     def _accel_callback(self, command: Twist) -> None:
+        if not self._use_gbplanner:
+            return
+
         target = PositionTarget()
         target.header.frame_id = self._body_frame_id
         target.coordinate_frame = PositionTarget.FRAME_BODY_NED
@@ -312,6 +344,48 @@ class Px4MavrosBridge(Node):
         self._last_setpoint_ns = self.get_clock().now().nanoseconds
         if not self._separate_controller_ready_topic:
             self._last_controller_command_ns = self._last_setpoint_ns
+
+    def _velocity_callback(self, command: Twist) -> None:
+        if self._use_gbplanner:
+            return
+
+        target = PositionTarget()
+        target.header.frame_id = self._body_frame_id
+        target.coordinate_frame = PositionTarget.FRAME_BODY_NED
+        target.type_mask = (
+            PositionTarget.IGNORE_PX
+            | PositionTarget.IGNORE_PY
+            | PositionTarget.IGNORE_PZ
+            | PositionTarget.IGNORE_AFX
+            | PositionTarget.IGNORE_AFY
+            | PositionTarget.IGNORE_AFZ
+            | PositionTarget.IGNORE_YAW
+        )
+        target.velocity.x = command.linear.x
+        target.velocity.y = command.linear.y
+        target.velocity.z = command.linear.z
+        target.yaw_rate = command.angular.z
+
+        self._last_setpoint = target
+        self._last_setpoint_ns = self.get_clock().now().nanoseconds
+        # The optional readiness topic belongs to the acceleration controller.
+        # A velocity message is itself proof that the fallback controller is
+        # ready, so it must refresh both timestamps.
+        self._last_controller_command_ns = self._last_setpoint_ns
+
+    def _use_gbplanner_callback(self, selection: Bool) -> None:
+        use_gbplanner = bool(selection.data)
+        if use_gbplanner == self._use_gbplanner:
+            return
+
+        self._use_gbplanner = use_gbplanner
+        # Never replay a cached command encoded for the previously active
+        # control mode. Wait for a fresh command from the selected controller.
+        self._last_setpoint = None
+        self._last_setpoint_ns = None
+        self._last_controller_command_ns = None
+        mode = 'acceleration' if use_gbplanner else 'velocity'
+        self.get_logger().info(f'Switched to {mode} control')
 
     def _controller_ready_callback(self, _command: Twist) -> None:
         """Record a real upstream command independently of CBF fallback output."""
