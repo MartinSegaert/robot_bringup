@@ -1,0 +1,19 @@
+cbf_pc_selector:
+    ros__parameters:
+        frame_body: base_link
+        sensors:
+            1:  # gz lidar
+                topic: /rmf/lidar/points
+                frame: lidar_link
+                bins_w: 32
+                bins_h: 8
+                percentile: 10  # [%]
+                min_per_bin: 0
+                min_range: 0.8  # [m]
+                max_range: 10.0  # [m]
+                is_pointcloud: true
+                is_polar: true
+                # input info
+                azimuth_range: [-180.0, 180.0]  # range of azimuth covered by sensor [deg]
+                elevation_range: [-7.0, 55.0]  # range of azimuth covered by sensor [deg]
+                nb_pts: 65536  # -- used only for preallocating bin size
