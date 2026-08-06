@@ -79,7 +79,7 @@ def generate_waypoints(crete_params: dict) -> dict:
 
     return {
         "frame_id": "world",
-        "inter_waypoint_delay": 1.0,
+        "inter_waypoint_delay": 2.0,
         "retry_delay": 2.0,
         "max_retries": 0,
         "waypoints": [

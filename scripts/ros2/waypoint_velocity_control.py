@@ -26,17 +26,31 @@ def obstacle_speed_limit(
 
 
 def waypoint_speed_limit(
-    distance, max_acceleration, max_speed, stopping_tolerance=0.0
+    distance,
+    max_acceleration,
+    max_speed,
+    waypoint_arrival_distance=0.0,
+    waypoint_arrival_speed=0.0,
 ):
-    """Return a speed that reaches zero at ``stopping_tolerance``."""
+    """Return a speed that reaches the requested speed at the arrival radius."""
     if max_acceleration <= 0.0:
         raise ValueError('max_acceleration must be positive')
     if max_speed < 0.0:
         raise ValueError('max_speed must be non-negative')
-    if stopping_tolerance < 0.0:
-        raise ValueError('stopping_tolerance must be non-negative')
-    braking_distance = max(distance - stopping_tolerance, 0.0)
-    return min(max_speed, math.sqrt(2.0 * max_acceleration * braking_distance))
+    if waypoint_arrival_distance < 0.0:
+        raise ValueError('waypoint_arrival_distance must be non-negative')
+    if not 0.0 <= waypoint_arrival_speed <= max_speed:
+        raise ValueError(
+            'waypoint_arrival_speed must be between zero and max_speed'
+        )
+    braking_distance = max(distance - waypoint_arrival_distance, 0.0)
+    return min(
+        max_speed,
+        math.sqrt(
+            waypoint_arrival_speed**2
+            + 2.0 * max_acceleration * braking_distance
+        ),
+    )
 
 
 def slew_speed(current_speed, target_speed, max_acceleration, dt):

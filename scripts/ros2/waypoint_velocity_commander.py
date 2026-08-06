@@ -84,6 +84,8 @@ class WaypointVelocityCommander(Node):
             'max_speed': 2.0,
             'min_distance': 1.0,
             'max_distance': 5.0,
+            'waypoint_arrival_speed': 0.5,
+            'waypoint_arrival_distance': 1.0,
             'waypoint_tolerance': 0.05,
             'body_frame_output': True,
         }
@@ -97,6 +99,12 @@ class WaypointVelocityCommander(Node):
         self._max_speed = float(self.get_parameter('max_speed').value)
         self._min_distance = float(self.get_parameter('min_distance').value)
         self._max_distance = float(self.get_parameter('max_distance').value)
+        self._waypoint_arrival_speed = float(
+            self.get_parameter('waypoint_arrival_speed').value
+        )
+        self._waypoint_arrival_distance = float(
+            self.get_parameter('waypoint_arrival_distance').value
+        )
         self._waypoint_tolerance = float(self.get_parameter('waypoint_tolerance').value)
         self._body_frame_output = bool(self.get_parameter('body_frame_output').value)
         publish_rate = float(self.get_parameter('publish_rate').value)
@@ -147,6 +155,14 @@ class WaypointVelocityCommander(Node):
             raise ValueError('distances must satisfy 0 <= min_distance < max_distance')
         if self._waypoint_tolerance < 0.0:
             raise ValueError('waypoint_tolerance must be non-negative')
+        if not 0.0 <= self._waypoint_arrival_speed <= self._max_speed:
+            raise ValueError(
+                'waypoint_arrival_speed must be between zero and max_speed'
+            )
+        if self._waypoint_arrival_distance < self._waypoint_tolerance:
+            raise ValueError(
+                'waypoint_arrival_distance must be at least waypoint_tolerance'
+            )
 
     def _waypoint_cb(self, message):
         self._waypoint = message.pose.position
@@ -205,7 +221,8 @@ class WaypointVelocityCommander(Node):
                 distance,
                 self._max_acceleration,
                 self._max_speed,
-                self._waypoint_tolerance,
+                self._waypoint_arrival_distance,
+                self._waypoint_arrival_speed,
             )
             target_speed = min(obstacle_limit, waypoint_limit)
 
