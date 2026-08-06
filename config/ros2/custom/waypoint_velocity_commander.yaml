@@ -8,12 +8,12 @@ waypoint_velocity_commander:
 
     # Controller
     publish_rate: 20.0                       # Hz
-    max_acceleration: 1.0                    # m/s^2, acceleration and deceleration
+    max_acceleration: 0.5                   # m/s^2, acceleration and deceleration
     max_yaw_rate: 1.0                        # rad/s
     yaw_gain: 1.5                            # (rad/s)/rad
     min_speed: 2.0                           # m/s, obstacle-limited floor
     max_speed: 4.0                           # m/s
-    waypoint_tolerance: 0.05                 # m, command zero inside this radius
+    waypoint_tolerance: 1.0                 # m, command zero inside this radius
     body_frame_output: true                  # false publishes world-frame linear velocity
 
     # Obstacle speed interpolation

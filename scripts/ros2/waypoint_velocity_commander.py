@@ -173,8 +173,18 @@ class WaypointVelocityCommander(Node):
             )
             target_speed = min(obstacle_limit, waypoint_limit)
 
+        # Base the command on the measured speed instead of the previously
+        # published command.  This keeps the first velocity setpoint close to
+        # the UAV's actual speed when control switches from acceleration to
+        # velocity commands, while still limiting the requested acceleration.
+        odometry_velocity = self._odometry.twist.twist.linear
+        odometry_speed = math.sqrt(
+            odometry_velocity.x**2
+            + odometry_velocity.y**2
+            + odometry_velocity.z**2
+        )
         self._speed = slew_speed(
-            self._speed, target_speed, self._max_acceleration, dt
+            odometry_speed, target_speed, self._max_acceleration, dt
         )
         if distance > 0.0 and self._speed > 0.0:
             velocity = tuple(self._speed * component / distance for component in delta)
@@ -209,4 +219,3 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
-

@@ -23,7 +23,7 @@ interpolate_traj: true
 use_time_from_start: true
 travel_backward: false
 init_motion:
-  z_takeoff: 4.5
+  z_takeoff: 7.0
   z_drop: 0.5
   x_forward: 0.25
 # init_motion:
