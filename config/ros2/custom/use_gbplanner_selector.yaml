@@ -3,4 +3,5 @@ use_gbplanner_selector:
     use_sim_time: true
     input_topic: /rmf/lidar/points_downsampled
     output_topic: /use_gbplanner
-    distance_threshold: 10.0
+    distance_threshold: 10.0 # use_gbplanner false when all lidar points are further than distance_threshold
+    duration_threshold: 1.0 # duration distance thrshold must be satisfied before switching use_gbplanner boolean
