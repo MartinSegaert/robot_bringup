@@ -83,28 +83,28 @@ def generate_waypoints(crete_params: dict) -> dict:
         "retry_delay": 2.0,
         "max_retries": 0,
         "waypoints": [
-            waypoint("waypoint_1", 0.0, hill_1_y, WAYPOINT_ALTITUDE_ABOVE_GROUND, 0.0),
+            # waypoint("waypoint_1", 0.0, hill_1_y, WAYPOINT_ALTITUDE_ABOVE_GROUND, 0.0),
 
-            waypoint("waypoint_2", hill_1_center_x, hill_1_y, hill_1_z, 90.0),
+            # waypoint("waypoint_2", hill_1_center_x, hill_1_y, hill_1_z, 90.0),
 
-            waypoint("waypoint_3", hill_1_center_x, hill_1_y + 30, hill_1_z, 90.0),
-
-
-            waypoint("waypoint_4", hill_2_center_x, hill_2_y + 35, hill_2_z, 0.0),
+            # waypoint("waypoint_3", hill_1_center_x, hill_1_y + 30, hill_1_z, 90.0),
 
 
-            waypoint("waypoint_5", hill_2_center_x, hill_2_y, hill_2_z, 0.0),
+            # waypoint("waypoint_4", hill_2_center_x, hill_2_y + 35, hill_2_z, 0.0),
 
-            waypoint("waypoint_6", hill_2_center_x, -hill_2_y, hill_2_z, -90.0),
 
-            waypoint("waypoint_7", hill_1_center_x, -hill_1_y, hill_1_z, 180),
-            waypoint("waypoint_8", hill_1_center_x, hill_1_y, hill_1_z, 90.0),
+            # waypoint("waypoint_5", hill_2_center_x, hill_2_y, hill_2_z, 0.0),
 
-            waypoint("waypoint_9", 0.0, 0.0, WAYPOINT_ALTITUDE_ABOVE_GROUND, 0.0),
+            # waypoint("waypoint_6", hill_2_center_x, -hill_2_y, hill_2_z, -90.0),
 
-            # waypoint("waypoint_1", -30.0, 0.0, 15.0, 0),
-            # waypoint("waypoint_2", -30, 10, 20.0, 0),
-            # waypoint("waypoint_3", -40, 20, 20.0, 0.0),
+            # waypoint("waypoint_7", hill_1_center_x, -hill_1_y, hill_1_z, 180),
+            # waypoint("waypoint_8", hill_1_center_x, hill_1_y, hill_1_z, 90.0),
+
+            # waypoint("waypoint_9", 0.0, 0.0, WAYPOINT_ALTITUDE_ABOVE_GROUND, 0.0),
+
+            waypoint("waypoint_1", -30.0, 0.0, 20.0, 0),
+            waypoint("waypoint_2", -30, 10, 20.0, 0),
+            waypoint("waypoint_3", -40, 20, 20.0, 0.0),
 
             # waypoint("waypoint_1", hill_2_center_x, hill_2_y, hill_2_z, 0.0),
             # waypoint("waypoint_2", 0.0, 0.0, 3.0, 0.0),

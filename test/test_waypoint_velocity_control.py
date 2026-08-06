@@ -26,6 +26,11 @@ def test_waypoint_limit_reaches_zero_and_uses_braking_equation():
     assert control.waypoint_speed_limit(100.0, 0.5, 2.0) == 2.0
 
 
+def test_waypoint_limit_stops_at_tolerance_boundary():
+    assert control.waypoint_speed_limit(1.0, 0.5, 2.0, 1.0) == 0.0
+    assert control.waypoint_speed_limit(2.0, 0.5, 2.0, 1.0) == pytest.approx(1.0)
+
+
 def test_slew_speed_limits_acceleration_and_deceleration():
     assert control.slew_speed(0.0, 2.0, 0.5, 0.1) == pytest.approx(0.05)
     assert control.slew_speed(1.0, 0.0, 0.5, 0.1) == pytest.approx(0.95)
@@ -35,4 +40,3 @@ def test_slew_speed_limits_acceleration_and_deceleration():
 def test_shortest_angular_distance_wraps():
     error = control.shortest_angular_distance(math.radians(179), math.radians(-179))
     assert error == pytest.approx(math.radians(2))
-

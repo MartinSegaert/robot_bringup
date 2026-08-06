@@ -7,9 +7,15 @@ import rclpy
 from geometry_msgs.msg import PoseStamped, Twist, Vector3
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
-from rclpy.qos import HistoryPolicy, QoSProfile, ReliabilityPolicy
+from rclpy.qos import (
+    DurabilityPolicy,
+    HistoryPolicy,
+    QoSProfile,
+    ReliabilityPolicy,
+)
 from sensor_msgs.msg import PointCloud2
 import sensor_msgs_py.point_cloud2 as pc2
+from std_msgs.msg import Bool
 
 from waypoint_velocity_control import (
     clamp,
@@ -24,6 +30,13 @@ _SENSOR_QOS = QoSProfile(
     reliability=ReliabilityPolicy.BEST_EFFORT,
     history=HistoryPolicy.KEEP_LAST,
     depth=5,
+)
+
+_SELECTOR_QOS = QoSProfile(
+    reliability=ReliabilityPolicy.RELIABLE,
+    durability=DurabilityPolicy.TRANSIENT_LOCAL,
+    history=HistoryPolicy.KEEP_LAST,
+    depth=1,
 )
 
 
@@ -62,6 +75,7 @@ class WaypointVelocityCommander(Node):
             'odometry_topic': '/rmf/odom',
             'obstacle_topic': '/rmf/lidar/points_downsampled',
             'cmd_vel_topic': '/cmd_vel',
+            'use_gbplanner_topic': '/use_gbplanner',
             'publish_rate': 20.0,
             'max_acceleration': 0.5,
             'max_yaw_rate': 1.0,
@@ -92,23 +106,32 @@ class WaypointVelocityCommander(Node):
         self._odometry = None
         self._obstacle_distance = math.inf
         self._speed = 0.0
+        self._speed_initialized = False
+        self._use_gbplanner = True
         self._last_update = self.get_clock().now()
 
         waypoint_topic = str(self.get_parameter('waypoint_topic').value)
         odometry_topic = str(self.get_parameter('odometry_topic').value)
         obstacle_topic = str(self.get_parameter('obstacle_topic').value)
         cmd_vel_topic = str(self.get_parameter('cmd_vel_topic').value)
+        use_gbplanner_topic = str(
+            self.get_parameter('use_gbplanner_topic').value
+        )
 
         self._publisher = self.create_publisher(Twist, cmd_vel_topic, 10)
         self.create_subscription(PoseStamped, waypoint_topic, self._waypoint_cb, 10)
         self.create_subscription(Odometry, odometry_topic, self._odometry_cb, _SENSOR_QOS)
         self.create_subscription(PointCloud2, obstacle_topic, self._obstacle_cb, _SENSOR_QOS)
+        self.create_subscription(
+            Bool, use_gbplanner_topic, self._use_gbplanner_cb, _SELECTOR_QOS
+        )
         self.create_timer(1.0 / publish_rate, self._timer_cb)
 
         frame = 'body' if self._body_frame_output else 'world'
         self.get_logger().info(
             f'Publishing {frame}-frame commands on {cmd_vel_topic}; waypoint: '
-            f'{waypoint_topic}, odometry: {odometry_topic}, obstacles: {obstacle_topic}'
+            f'{waypoint_topic}, odometry: {odometry_topic}, obstacles: '
+            f'{obstacle_topic}, selector: {use_gbplanner_topic}'
         )
 
     def _validate_parameters(self, publish_rate):
@@ -131,6 +154,12 @@ class WaypointVelocityCommander(Node):
     def _odometry_cb(self, message):
         self._odometry = message
 
+    def _use_gbplanner_cb(self, message):
+        use_gbplanner = bool(message.data)
+        if use_gbplanner and not self._use_gbplanner:
+            self._speed_initialized = False
+        self._use_gbplanner = use_gbplanner
+
     def _obstacle_cb(self, message):
         nearest_squared = math.inf
         for x, y, z in pc2.read_points(
@@ -143,6 +172,10 @@ class WaypointVelocityCommander(Node):
         now = self.get_clock().now()
         dt = max((now - self._last_update).nanoseconds * 1e-9, 0.0)
         self._last_update = now
+
+        if self._use_gbplanner:
+            return
+
         command = Twist()
 
         if self._waypoint is None or self._odometry is None:
@@ -169,22 +202,27 @@ class WaypointVelocityCommander(Node):
                 self._max_speed,
             )
             waypoint_limit = waypoint_speed_limit(
-                distance, self._max_acceleration, self._max_speed
+                distance,
+                self._max_acceleration,
+                self._max_speed,
+                self._waypoint_tolerance,
             )
             target_speed = min(obstacle_limit, waypoint_limit)
 
-        # Base the command on the measured speed instead of the previously
-        # published command.  This keeps the first velocity setpoint close to
-        # the UAV's actual speed when control switches from acceleration to
-        # velocity commands, while still limiting the requested acceleration.
-        odometry_velocity = self._odometry.twist.twist.linear
-        odometry_speed = math.sqrt(
-            odometry_velocity.x**2
-            + odometry_velocity.y**2
-            + odometry_velocity.z**2
-        )
+        # Seed the ramp from measured speed once, then slew the command itself.
+        # Re-anchoring to odometry every tick turns the acceleration limit into
+        # a small fixed velocity error and prevents deceleration setpoints from
+        # accumulating into a braking ramp.
+        if not self._speed_initialized:
+            odometry_velocity = self._odometry.twist.twist.linear
+            self._speed = math.sqrt(
+                odometry_velocity.x**2
+                + odometry_velocity.y**2
+                + odometry_velocity.z**2
+            )
+            self._speed_initialized = True
         self._speed = slew_speed(
-            odometry_speed, target_speed, self._max_acceleration, dt
+            self._speed, target_speed, self._max_acceleration, dt
         )
         if distance > 0.0 and self._speed > 0.0:
             velocity = tuple(self._speed * component / distance for component in delta)

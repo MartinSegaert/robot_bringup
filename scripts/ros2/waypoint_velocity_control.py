@@ -25,13 +25,18 @@ def obstacle_speed_limit(
     return min_speed + ratio * (max_speed - min_speed)
 
 
-def waypoint_speed_limit(distance, max_acceleration, max_speed):
-    """Return a speed from which the robot can stop over ``distance``."""
+def waypoint_speed_limit(
+    distance, max_acceleration, max_speed, stopping_tolerance=0.0
+):
+    """Return a speed that reaches zero at ``stopping_tolerance``."""
     if max_acceleration <= 0.0:
         raise ValueError('max_acceleration must be positive')
     if max_speed < 0.0:
         raise ValueError('max_speed must be non-negative')
-    return min(max_speed, math.sqrt(2.0 * max_acceleration * max(distance, 0.0)))
+    if stopping_tolerance < 0.0:
+        raise ValueError('stopping_tolerance must be non-negative')
+    braking_distance = max(distance - stopping_tolerance, 0.0)
+    return min(max_speed, math.sqrt(2.0 * max_acceleration * braking_distance))
 
 
 def slew_speed(current_speed, target_speed, max_acceleration, dt):
@@ -47,4 +52,3 @@ def slew_speed(current_speed, target_speed, max_acceleration, dt):
 def shortest_angular_distance(current, target):
     """Return the signed shortest angle from current to target."""
     return math.atan2(math.sin(target - current), math.cos(target - current))
-
