@@ -42,6 +42,13 @@ class DurationThresholdFilter:
 
         return self.value
 
+    def set_immediately(self, value):
+        """Set the state immediately and discard any pending transition."""
+        self.value = bool(value)
+        self.pending_value = None
+        self.pending_since_ns = None
+        return self.value
+
 
 def has_point_within_distance(points, distance_threshold):
     """Return whether any finite XYZ point is within the given radius."""

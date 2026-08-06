@@ -24,6 +24,9 @@ class UseGbplannerSelector(Node):
         )
         self.declare_parameter('output_topic', '/use_gbplanner')
         self.declare_parameter('distance_threshold_enable_gbplanner', 5.0)
+        self.declare_parameter(
+            'distance_threshold_enable_gbplanner_urgent', 2.0
+        )
         self.declare_parameter('distance_threshold_disable_gbplanner', 6.0)
         self.declare_parameter('duration_threshold', 1.0)
 
@@ -32,6 +35,11 @@ class UseGbplannerSelector(Node):
         self.distance_threshold_enable_gbplanner = float(
             self.get_parameter(
                 'distance_threshold_enable_gbplanner'
+            ).value
+        )
+        self.distance_threshold_enable_gbplanner_urgent = float(
+            self.get_parameter(
+                'distance_threshold_enable_gbplanner_urgent'
             ).value
         )
         self.distance_threshold_disable_gbplanner = float(
@@ -49,6 +57,18 @@ class UseGbplannerSelector(Node):
         if self.distance_threshold_disable_gbplanner <= 0.0:
             raise ValueError(
                 'distance_threshold_disable_gbplanner must be positive'
+            )
+        if self.distance_threshold_enable_gbplanner_urgent <= 0.0:
+            raise ValueError(
+                'distance_threshold_enable_gbplanner_urgent must be positive'
+            )
+        if (
+            self.distance_threshold_enable_gbplanner_urgent
+            > self.distance_threshold_enable_gbplanner
+        ):
+            raise ValueError(
+                'distance_threshold_enable_gbplanner_urgent must be less than '
+                'or equal to distance_threshold_enable_gbplanner'
             )
         if (
             self.distance_threshold_enable_gbplanner
@@ -81,6 +101,8 @@ class UseGbplannerSelector(Node):
             f'{self.distance_threshold_enable_gbplanner:.2f} m, true -> false '
             f'beyond {self.distance_threshold_disable_gbplanner:.2f} m; '
             f'changes must persist for {self.duration_threshold:.2f} s; '
+            f'false -> true immediately within '
+            f'{self.distance_threshold_enable_gbplanner_urgent:.2f} m; '
             f'publishing the decision on {output_topic}'
         )
 
@@ -89,17 +111,23 @@ class UseGbplannerSelector(Node):
             message, field_names=('x', 'y', 'z'), skip_nans=False
         )
         previous_value = self.state_filter.value
-        if previous_value:
+        urgent_enable = not previous_value and has_point_within_distance(
+            points, self.distance_threshold_enable_gbplanner_urgent
+        )
+        if urgent_enable:
+            use_gbplanner = self.state_filter.set_immediately(True)
+        elif previous_value:
             distance_threshold = self.distance_threshold_disable_gbplanner
         else:
             distance_threshold = self.distance_threshold_enable_gbplanner
-        observed_use_gbplanner = has_point_within_distance(
-            points, distance_threshold
-        )
-        use_gbplanner = self.state_filter.update(
-            observed_use_gbplanner,
-            self.get_clock().now().nanoseconds,
-        )
+        if not urgent_enable:
+            observed_use_gbplanner = has_point_within_distance(
+                points, distance_threshold
+            )
+            use_gbplanner = self.state_filter.update(
+                observed_use_gbplanner,
+                self.get_clock().now().nanoseconds,
+            )
         if use_gbplanner != previous_value:
             self.get_logger().info(
                 f'use_gbplanner changed to {use_gbplanner}'

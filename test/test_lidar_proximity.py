@@ -64,6 +64,15 @@ def test_duration_filter_debounces_both_directions():
     assert state_filter.update(True, 1_100_000_000) is True
 
 
+def test_duration_filter_can_be_set_immediately():
+    state_filter = DurationThresholdFilter(False, duration_threshold=1.0)
+
+    assert state_filter.update(True, 0) is False
+    assert state_filter.set_immediately(True) is True
+    assert state_filter.pending_value is None
+    assert state_filter.pending_since_ns is None
+
+
 def test_duration_filter_restarts_after_time_moves_backwards():
     state_filter = DurationThresholdFilter(True, duration_threshold=1.0)
 
