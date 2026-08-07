@@ -3,7 +3,7 @@ use_gbplanner_selector:
     use_sim_time: true
     input_topic: /rmf/lidar/points_downsampled
     output_topic: /use_gbplanner
-    enable_use_gbplanner_selector: false
+    enable_use_gbplanner_selector: true
     distance_threshold_enable_gbplanner: 18.0
     distance_threshold_enable_gbplanner_urgent: 14.0 # Bypass duration_threshold and enable GBPlanner immediately inside this radius.
     distance_threshold_disable_gbplanner: 20.0
