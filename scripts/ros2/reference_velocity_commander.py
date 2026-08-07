@@ -34,14 +34,13 @@ class ReferenceVelocityCommander(Node):
             'obstacle_topic': '/rmf/lidar/points_downsampled',
             'ref_vel_topic': '/rmf/ref_vel',
             'publish_rate': 20.0,
+            'max_speed': 2.0,
             'min_distance_obstacle': 1.0,
             'max_distance_obstacle': 5.0,
             'min_speed_obstacle': 0.2,
-            'max_speed_obstacle': 2.0,
             'min_distance_waypoint': 1.0,
             'max_distance_waypoint': 5.0,
             'min_speed_waypoint': 0.2,
-            'max_speed_waypoint': 2.0,
         }
         for name, value in defaults.items():
             self.declare_parameter(name, value)
@@ -80,8 +79,7 @@ class ReferenceVelocityCommander(Node):
         return (
             float(self.get_parameter(f'min_distance_{profile}').value),
             float(self.get_parameter(f'max_distance_{profile}').value),
-            float(self.get_parameter(f'min_speed_{profile}').value),
-            float(self.get_parameter(f'max_speed_{profile}').value),
+            float(self.get_parameter(f'max_speed').value),
         )
 
     def _validate_parameters(self, publish_rate):

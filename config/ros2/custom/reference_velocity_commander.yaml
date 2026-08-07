@@ -8,14 +8,14 @@ reference_velocity_commander:
 
     publish_rate: 20.0                   # Hz
 
+
+    max_speed: 4.0                       # m/s: max speed for both obstacle and waypoint min/max interpolation
     # Obstacle speed interpolation
     min_distance_obstacle: 20.0          # m: at/below this, use min speed
     max_distance_obstacle: 30.0          # m: at/above this, use max speed
     min_speed_obstacle: 2.0              # m/s
-    max_speed_obstacle: 4.0              # m/s
 
     # Waypoint speed interpolation
-    min_distance_waypoint: 2.0           # m: at/below this, use min speed
-    max_distance_waypoint: 10.0          # m: at/above this, use max speed
+    min_distance_waypoint: 1.0           # m: at/below this, use min speed
+    max_distance_waypoint: 4.0          # m: at/above this, use max speed
     min_speed_waypoint: 1.0              # m/s
-    max_speed_waypoint: 4.0              # m/s
