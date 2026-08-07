@@ -3,10 +3,8 @@ use_gbplanner_selector:
     use_sim_time: true
     input_topic: /rmf/lidar/points_downsampled
     output_topic: /use_gbplanner
-    # Hysteresis: enable GBPlanner only for close returns, but keep it enabled
-    # until every return is farther than the larger threshold.
+    enable_use_gbplanner_selector: false
     distance_threshold_enable_gbplanner: 18.0
-    # Bypass duration_threshold and enable GBPlanner immediately inside this radius.
-    distance_threshold_enable_gbplanner_urgent: 14.0
+    distance_threshold_enable_gbplanner_urgent: 14.0 # Bypass duration_threshold and enable GBPlanner immediately inside this radius.
     distance_threshold_disable_gbplanner: 20.0
     duration_threshold: 1.0 # duration distance thrshold must be satisfied before switching use_gbplanner boolean

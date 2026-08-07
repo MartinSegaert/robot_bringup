@@ -5,6 +5,9 @@ reference_velocity_commander:
     odometry_topic: /rmf/odom                        # nav_msgs/Odometry
     obstacle_topic: /rmf/lidar/points_downsampled   # sensor_msgs/PointCloud2
     ref_vel_topic: /rmf/ref_vel                      # std_msgs/Float32
+    use_gbplanner_topic: /use_gbplanner              # std_msgs/Bool
+    # Overridden by the compose service to match NMPC_CFG exactly.
+    nmpc_config: tl4q990_2/nmpc_config.yaml
 
     publish_rate: 20.0                   # Hz
 
