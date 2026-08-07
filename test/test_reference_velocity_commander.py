@@ -1,4 +1,3 @@
-import math
 from pathlib import Path
 import sys
 from types import SimpleNamespace
@@ -6,7 +5,6 @@ from types import SimpleNamespace
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Odometry
 from rclpy.context import Context
-from rclpy.duration import Duration
 from rclpy.parameter import Parameter
 
 
@@ -22,18 +20,18 @@ def _make_node(context):
         Parameter('odometry_topic', value='/test/reference_velocity/odometry'),
         Parameter('obstacle_topic', value='/test/reference_velocity/obstacles'),
         Parameter('ref_vel_topic', value='/test/reference_velocity/output'),
-        Parameter('max_acceleration', value=1.0),
-        Parameter('min_speed', value=2.0),
-        Parameter('max_speed', value=4.0),
-        Parameter('min_distance', value=12.0),
-        Parameter('max_distance', value=20.0),
-        Parameter('waypoint_arrival_speed', value=1.0),
-        Parameter('waypoint_arrival_distance', value=5.0),
-        Parameter('waypoint_tolerance', value=1.0),
+        Parameter('min_distance_obstacle', value=12.0),
+        Parameter('max_distance_obstacle', value=20.0),
+        Parameter('min_speed_obstacle', value=2.0),
+        Parameter('max_speed_obstacle', value=4.0),
+        Parameter('min_distance_waypoint', value=5.0),
+        Parameter('max_distance_waypoint', value=15.0),
+        Parameter('min_speed_waypoint', value=1.0),
+        Parameter('max_speed_waypoint', value=3.0),
     ], context=context)
 
 
-def test_publishes_scalar_obstacle_limited_reference_speed():
+def test_publishes_obstacle_limited_speed():
     context = Context()
     context.init(initialize_logging=False)
     node = None
@@ -47,21 +45,19 @@ def test_publishes_scalar_obstacle_limited_reference_speed():
         waypoint.pose.position.x = 100.0
         node._waypoint_cb(waypoint)
         node._odometry_cb(Odometry())
-        node._obstacle_distance = 16.0
-        node._speed = 3.0
-        node._last_update = node.get_clock().now() - Duration(seconds=1.0)
+        node._obstacle_distance = 14.0
 
         node._timer_cb()
 
         assert len(published) == 1
-        assert published[0].data == 3.0
+        assert published[0].data == 2.5
     finally:
         if node is not None:
             node.destroy_node()
         context.shutdown()
 
 
-def test_slews_reference_to_zero_inside_waypoint_tolerance():
+def test_publishes_waypoint_limited_speed():
     context = Context()
     context.init(initialize_logging=False)
     node = None
@@ -72,15 +68,53 @@ def test_slews_reference_to_zero_inside_waypoint_tolerance():
         node._publisher = SimpleNamespace(publish=published.append)
 
         waypoint = PoseStamped()
-        waypoint.pose.position.x = 0.5
+        waypoint.pose.position.x = 10.0
         node._waypoint_cb(waypoint)
         node._odometry_cb(Odometry())
-        node._speed = 3.0
-        node._last_update = node.get_clock().now() - Duration(seconds=0.5)
+        node._obstacle_distance = 100.0
 
         node._timer_cb()
 
-        assert math.isclose(published[0].data, 2.5, rel_tol=0.0, abs_tol=1e-3)
+        assert published[0].data == 2.0
+    finally:
+        if node is not None:
+            node.destroy_node()
+        context.shutdown()
+
+
+def test_publishes_waypoint_minimum_at_setpoint():
+    context = Context()
+    context.init(initialize_logging=False)
+    node = None
+
+    try:
+        node = _make_node(context)
+        published = []
+        node._publisher = SimpleNamespace(publish=published.append)
+        node._waypoint_cb(PoseStamped())
+        node._odometry_cb(Odometry())
+
+        node._timer_cb()
+
+        assert published[0].data == 1.0
+    finally:
+        if node is not None:
+            node.destroy_node()
+        context.shutdown()
+
+
+def test_publishes_lowest_maximum_without_distance_data():
+    context = Context()
+    context.init(initialize_logging=False)
+    node = None
+
+    try:
+        node = _make_node(context)
+        published = []
+        node._publisher = SimpleNamespace(publish=published.append)
+        node._timer_cb()
+
+        assert published[0].data == 3.0
     finally:
         if node is not None:
             node.destroy_node()

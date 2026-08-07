@@ -20,6 +20,13 @@ def test_obstacle_speed_limit_clamps_and_interpolates():
     assert control.obstacle_speed_limit(8.0, *args) == pytest.approx(2.0)
 
 
+def test_distance_speed_limit_clamps_and_interpolates():
+    args = (2.0, 6.0, 1.0, 3.0)
+    assert control.distance_speed_limit(1.0, *args) == pytest.approx(1.0)
+    assert control.distance_speed_limit(4.0, *args) == pytest.approx(2.0)
+    assert control.distance_speed_limit(7.0, *args) == pytest.approx(3.0)
+
+
 def test_waypoint_limit_defaults_to_reaching_zero_at_the_waypoint():
     assert control.waypoint_speed_limit(0.0, 0.5, 2.0) == 0.0
     assert control.waypoint_speed_limit(1.0, 0.5, 2.0) == pytest.approx(1.0)

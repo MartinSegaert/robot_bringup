@@ -8,21 +8,30 @@ def clamp(value, lower, upper):
     return max(lower, min(value, upper))
 
 
-def obstacle_speed_limit(
-    obstacle_distance, min_distance, max_distance, min_speed, max_speed
+def distance_speed_limit(
+    distance, min_distance, max_distance, min_speed, max_speed
 ):
-    """Linearly map obstacle clearance to an allowed speed."""
+    """Linearly map a distance to a speed within the configured bounds."""
     if max_distance <= min_distance:
         raise ValueError('max_distance must be greater than min_distance')
     if min_speed < 0.0 or max_speed < min_speed:
         raise ValueError('speeds must satisfy 0 <= min_speed <= max_speed')
 
     ratio = clamp(
-        (obstacle_distance - min_distance) / (max_distance - min_distance),
+        (distance - min_distance) / (max_distance - min_distance),
         0.0,
         1.0,
     )
     return min_speed + ratio * (max_speed - min_speed)
+
+
+def obstacle_speed_limit(
+    obstacle_distance, min_distance, max_distance, min_speed, max_speed
+):
+    """Linearly map obstacle clearance to an allowed speed."""
+    return distance_speed_limit(
+        obstacle_distance, min_distance, max_distance, min_speed, max_speed
+    )
 
 
 def waypoint_speed_limit(
