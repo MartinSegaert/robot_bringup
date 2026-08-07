@@ -38,4 +38,7 @@ The next target is published when `/rmf/odom` is within `reached_distance`
 `local_navigation_reaching_radius`. After the operator's first planner start
 has produced a real `/gbplanner_path`, the follower may re-trigger PCI between
 targets so that one explicit planner start runs the complete sequence. It will
-never trigger the initial planner start itself.
+never trigger the initial planner start itself. Continuation starts are retried
+until a path newer than the next target is observed. `restart_delay` controls
+the first attempt, `retry_delay` controls later attempts, and `max_retries: 0`
+means retry indefinitely.

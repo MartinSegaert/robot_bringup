@@ -114,6 +114,9 @@ else()
     ament_add_pytest_test(test_reference_velocity_commander
       test/test_reference_velocity_commander.py
     )
+    ament_add_pytest_test(test_waypoint_follower
+      test/test_waypoint_follower.py
+    )
     endif()
 
     ament_package()

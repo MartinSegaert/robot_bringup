@@ -80,8 +80,9 @@ def generate_waypoints(crete_params: dict) -> dict:
     return {
         "frame_id": "world",
         "inter_waypoint_delay": 2.0,
+        "restart_delay": 0.75,
         "retry_delay": 2.0,
-        "max_retries": 0,
+        "max_retries": 0,  # Retry indefinitely until a fresh path is observed.
         "waypoints": [
             waypoint("waypoint_1", 0.0, hill_1_y, WAYPOINT_ALTITUDE_ABOVE_GROUND, 0.0),
 

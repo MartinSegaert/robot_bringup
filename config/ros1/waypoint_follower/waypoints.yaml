@@ -1,7 +1,8 @@
 frame_id: world
 inter_waypoint_delay: 2.0
+restart_delay: 0.75
 retry_delay: 2.0
-max_retries: 0
+max_retries: 0  # Retry indefinitely until a fresh path is observed.
 waypoints:
   - name: waypoint_1
     x: 0.0

@@ -19,6 +19,13 @@ class WaypointFollower:
         self.inter_waypoint_delay = max(
             0.0, float(rospy.get_param("~inter_waypoint_delay", 0.5))
         )
+        self.restart_delay = max(
+            0.0, float(rospy.get_param("~restart_delay", 0.75))
+        )
+        self.retry_delay = max(
+            0.1, float(rospy.get_param("~retry_delay", 2.0))
+        )
+        self.max_retries = max(0, int(rospy.get_param("~max_retries", 0)))
         self.reached_distance = float(
             rospy.get_param("~reached_distance", 2.0)
         )
@@ -48,6 +55,10 @@ class WaypointFollower:
         self.send_pending = False
         self.send_timer = None
         self.restart_timer = None
+        self.restart_generation = 0
+        self.restart_attempts = 0
+        self.awaiting_restarted_path = False
+        self.restart_goal_stamp = rospy.Time(0)
         self.position = None
 
         self.goal_publisher = rospy.Publisher(
@@ -238,12 +249,7 @@ class WaypointFollower:
         self.waiting_for_reach = True
         self.goal_publisher.publish(goal)
         if self.index > 0 and self.planner_started:
-            # The target-reach tree can reset PCI when the previous goal is
-            # completed. Re-trigger only after a real planner path proves that
-            # the operator already pressed Start Planner for this mission.
-            self.restart_timer = rospy.Timer(
-                rospy.Duration(0.25), self._restart_planner, oneshot=True
-            )
+            self._start_restart_watchdog(goal.header.stamp)
         rospy.loginfo(
             "Loaded GBPlanner target %d/%d '%s': (%.2f, %.2f, %.2f)",
             self.index + 1,
@@ -258,24 +264,99 @@ class WaypointFollower:
         if self.running and message.poses:
             self.planner_started = True
 
-    def _restart_planner(self, _event):
-        if not self.running or rospy.is_shutdown():
+        if (
+            not self.awaiting_restarted_path
+            or not message.poses
+            or message.header.stamp <= self.restart_goal_stamp
+        ):
             return
+
+        self.awaiting_restarted_path = False
+        self._cancel_restart_timer()
+        rospy.loginfo(
+            "Planner continuation confirmed by a fresh path after %d "
+            "start attempt(s)",
+            self.restart_attempts,
+        )
+
+    def _cancel_restart_timer(self):
+        if self.restart_timer is not None:
+            self.restart_timer.shutdown()
+            self.restart_timer = None
+
+    def _schedule_restart(self, delay, generation):
+        if (
+            not self.awaiting_restarted_path
+            or generation != self.restart_generation
+        ):
+            return
+        self._cancel_restart_timer()
+        self.restart_timer = rospy.Timer(
+            rospy.Duration(delay),
+            lambda event: self._restart_planner(event, generation),
+            oneshot=True,
+        )
+
+    def _start_restart_watchdog(self, goal_stamp):
+        # Publishing a goal and calling the PCI start service use independent
+        # ROS connections. Give both GBPlanner and PCI time to consume the new
+        # goal, then keep retrying until a path stamped for this goal handoff is
+        # observed. This closes the race where the previous target's terminal
+        # reset used to overwrite the single restart request.
+        self.restart_generation += 1
+        self.restart_attempts = 0
+        self.awaiting_restarted_path = True
+        self.restart_goal_stamp = goal_stamp
+        self._schedule_restart(self.restart_delay, self.restart_generation)
+
+    def _restart_planner(self, _event, generation):
+        if (
+            not self.running
+            or rospy.is_shutdown()
+            or not self.awaiting_restarted_path
+            or generation != self.restart_generation
+        ):
+            return
+        self.restart_timer = None
+        self.restart_attempts += 1
         try:
             response = self.start_planner()
         except rospy.ServiceException as error:
-            rospy.logerr(
-                "Could not continue planning to the next waypoint: %s. "
-                "Use the Start Planner button to resume.",
+            rospy.logwarn(
+                "Could not continue planning to the next waypoint (attempt "
+                "%d): %s",
+                self.restart_attempts,
                 error,
             )
+        else:
+            if not response.success:
+                rospy.logwarn(
+                    "PCI rejected continuation attempt %d: %s",
+                    self.restart_attempts,
+                    response.message,
+                )
+
+        if (
+            not self.awaiting_restarted_path
+            or generation != self.restart_generation
+        ):
             return
-        if not response.success:
+
+        if self.max_retries > 0 and self.restart_attempts > self.max_retries:
+            self.awaiting_restarted_path = False
             rospy.logerr(
-                "PCI rejected continuation to the next waypoint: %s. "
+                "No fresh planner path after %d continuation attempt(s). "
                 "Use the Start Planner button to resume.",
-                response.message,
+                self.restart_attempts,
             )
+            return
+
+        rospy.logwarn(
+            "No fresh path for the new waypoint yet; retrying planner start "
+            "in %.2f s",
+            self.retry_delay,
+        )
+        self._schedule_restart(self.retry_delay, generation)
 
     def _odometry_callback(self, message):
         self.position = message.pose.pose.position
