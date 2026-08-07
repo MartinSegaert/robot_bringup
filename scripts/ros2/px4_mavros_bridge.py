@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Connect the stack's acceleration/velocity and odometry topics to MAVROS.
+"""Connect the stack's controller commands and odometry topics to MAVROS.
 
-Commands are selected by ``/use_gbplanner`` and kept alive at
-``setpoint_rate_hz`` while fresh. GBPlanner uses acceleration control; the
-fallback waypoint controller uses velocity control.
+Commands are kept alive at ``setpoint_rate_hz`` while fresh. The optional
+legacy command selector uses acceleration while ``/use_gbplanner`` is true and
+velocity while it is false. When disabled, NMPC acceleration remains active in
+both GBPlanner and straight-path modes.
 Publishing stops after ``setpoint_timeout_s`` so PX4 can detect loss of the
 offboard command stream instead of flying indefinitely on a stale command.
 """
@@ -156,6 +157,7 @@ class Px4MavrosBridge(Node):
 
         self.declare_parameter('accel_input_topic', '/rmf/cmd/acc')
         self.declare_parameter('velocity_input_topic', '/rmf/cmd/vel')
+        self.declare_parameter('select_velocity_when_gbplanner_disabled', False)
         self.declare_parameter('use_gbplanner_topic', '/use_gbplanner')
         self.declare_parameter('gbplanner_path_topic', '/gbplanner_path')
         self.declare_parameter('gbplanner_resume_settle_time_s', 0.1)
@@ -186,6 +188,11 @@ class Px4MavrosBridge(Node):
 
         accel_topic = self.get_parameter('accel_input_topic').value
         velocity_topic = self.get_parameter('velocity_input_topic').value
+        self._select_velocity_when_gbplanner_disabled = bool(
+            self.get_parameter(
+                'select_velocity_when_gbplanner_disabled'
+            ).value
+        )
         use_gbplanner_topic = self.get_parameter('use_gbplanner_topic').value
         gbplanner_path_topic = self.get_parameter('gbplanner_path_topic').value
         gbplanner_resume_settle_time_s = float(
@@ -258,7 +265,10 @@ class Px4MavrosBridge(Node):
         )
         self._gbplanner_resume_in_progress = False
         self.create_subscription(Twist, accel_topic, self._accel_callback, 10)
-        self.create_subscription(Twist, velocity_topic, self._velocity_callback, 10)
+        if self._select_velocity_when_gbplanner_disabled:
+            self.create_subscription(
+                Twist, velocity_topic, self._velocity_callback, 10
+            )
         self.create_subscription(
             Bool,
             use_gbplanner_topic,
@@ -310,10 +320,18 @@ class Px4MavrosBridge(Node):
         self._timed_out = False
         self.create_timer(1.0 / rate_hz, self._publish_setpoint)
 
+        if self._select_velocity_when_gbplanner_disabled:
+            command_description = (
+                f'acceleration {accel_topic} when {use_gbplanner_topic}=true; '
+                f'velocity {velocity_topic} when it is false'
+            )
+        else:
+            command_description = (
+                f'NMPC acceleration {accel_topic} in both '
+                f'{use_gbplanner_topic} modes'
+            )
         self.get_logger().info(
-            f'Acceleration {accel_topic} when {use_gbplanner_topic}=true; '
-            f'velocity {velocity_topic} when {use_gbplanner_topic}=false; '
-            f'setpoints -> {setpoint_topic}; '
+            f'{command_description}; setpoints -> {setpoint_topic}; '
             f'odometry {mavros_odom_topic} -> {odom_topic}'
         )
         self.get_logger().info(
@@ -346,7 +364,10 @@ class Px4MavrosBridge(Node):
             )
 
     def _accel_callback(self, command: Twist) -> None:
-        if not self._use_gbplanner:
+        if (
+            self._select_velocity_when_gbplanner_disabled
+            and not self._use_gbplanner
+        ):
             return
 
         now_ns = self.get_clock().now().nanoseconds
@@ -382,7 +403,10 @@ class Px4MavrosBridge(Node):
             self._last_controller_command_ns = self._last_setpoint_ns
 
     def _velocity_callback(self, command: Twist) -> None:
-        if self._use_gbplanner:
+        if (
+            not self._select_velocity_when_gbplanner_disabled
+            or self._use_gbplanner
+        ):
             return
 
         target = PositionTarget()
@@ -432,8 +456,14 @@ class Px4MavrosBridge(Node):
         else:
             self._gbplanner_resume_in_progress = False
             self._gbplanner_resume_gate.cancel()
-        mode = 'acceleration' if use_gbplanner else 'velocity'
-        self.get_logger().info(f'Switched to {mode} control')
+        if self._select_velocity_when_gbplanner_disabled:
+            mode = 'acceleration' if use_gbplanner else 'velocity'
+            self.get_logger().info(f'Switched to {mode} control')
+        else:
+            path_mode = 'collision-checked' if use_gbplanner else 'straight'
+            self.get_logger().info(
+                f'Switched to {path_mode}-path NMPC control'
+            )
 
     def _gbplanner_path_callback(self, path: NavPath) -> None:
         if not self._use_gbplanner or not path.poses:
@@ -452,7 +482,10 @@ class Px4MavrosBridge(Node):
 
     def _controller_ready_callback(self, _command: Twist) -> None:
         """Record a real upstream command independently of CBF fallback output."""
-        if not self._use_gbplanner or self._gbplanner_resume_gate.waiting:
+        if (
+            self._select_velocity_when_gbplanner_disabled
+            and not self._use_gbplanner
+        ) or self._gbplanner_resume_gate.waiting:
             return
         self._last_controller_command_ns = self.get_clock().now().nanoseconds
 

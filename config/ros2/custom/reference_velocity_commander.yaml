@@ -1,0 +1,20 @@
+reference_velocity_commander:
+  ros__parameters:
+    # Interfaces
+    waypoint_topic: /move_base_simple/goal           # geometry_msgs/PoseStamped
+    odometry_topic: /rmf/odom                        # nav_msgs/Odometry
+    obstacle_topic: /rmf/lidar/points_downsampled   # sensor_msgs/PointCloud2
+    ref_vel_topic: /rmf/ref_vel                      # std_msgs/Float32
+
+    # Reference speed
+    publish_rate: 20.0                   # Hz
+    max_acceleration: 1.0                # m/s^2, acceleration and deceleration
+    min_speed: 2.0                       # m/s, obstacle-limited floor
+    max_speed: 4.0                       # m/s
+    waypoint_arrival_speed: 1.0          # m/s, speed at/below the arrival radius
+    waypoint_arrival_distance: 5.0       # m, radius where arrival speed is reached
+    waypoint_tolerance: 1.0              # m, reference zero inside this radius
+
+    # Obstacle speed interpolation
+    min_distance: 12.0                   # m: at/below this, allow min_speed
+    max_distance: 20.0                   # m: at/above this, allow max_speed
